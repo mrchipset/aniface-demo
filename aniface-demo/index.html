@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8" />
+<title>Aniface · 小熊猫头像</title>
+<style>
+  body { margin:0; background:#1b1e24; color:#cfd4dc; font-family:system-ui,"Segoe UI",sans-serif; font-size:13px; }
+  header { padding:10px 16px; border-bottom:1px solid #2b303a; display:flex; gap:14px; align-items:center; }
+  h1 { font-size:15px; margin:0; font-weight:600; }
+  #status { color:#8ea0c0; white-space:pre-wrap; }
+  main { display:flex; gap:14px; padding:14px; align-items:flex-start; }
+  canvas#avatar { background:#11141a; border-radius:10px; width:540px; height:540px; flex:0 0 auto; }
+  aside { display:flex; flex-direction:column; gap:10px; width:350px; }
+  .card { background:#22262e; border:1px solid #2f343d; border-radius:10px; padding:10px 12px; }
+  .card h2 { font-size:12px; margin:0 0 8px; color:#9fb0cc; font-weight:600; letter-spacing:.4px; }
+  video, img#frame { width:100%; border-radius:8px; background:#11141a; display:block; }
+  button { padding:7px 12px; border-radius:8px; border:0; background:#4f7cff; color:#fff; cursor:pointer; font-size:13px; }
+  button.ghost { background:#3a4150; }
+  button:disabled { background:#39404d; cursor:default; }
+  input[type=file] { color:#9fb0cc; font-size:12px; width:100%; }
+  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:5px 0; }
+  .row label { flex:0 0 84px; color:#9fb0cc; }
+  .row input[type=range] { flex:1; }
+  .row .val { flex:0 0 46px; text-align:right; color:#7f8899; font-variant-numeric:tabular-nums; }
+  #diag { font-size:11px; color:#7f8899; margin:2px 0 6px; word-break:break-all; }
+  code { font-size:11px; color:#7f8899; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Aniface · 小熊猫头像</h1>
+    <span id="status">未开始</span>
+  </header>
+  <main>
+    <canvas id="avatar" width="540" height="540"></canvas>
+    <aside>
+      <div class="card">
+        <h2>① 摄像头</h2>
+        <div id="diag">检测中…</div>
+        <video id="webcam" autoplay playsinline muted></video>
+        <div class="row" style="margin-top:8px">
+          <button id="start">启动摄像头</button>
+          <code>需 https:// 或 localhost</code>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>② 位置 / 缩放（新）</h2>
+        <div class="row"><label>Scale</label><input type="range" id="t_scale" min="0.2" max="4" step="0.01" value="1"><span class="val" id="tv_scale">1.00</span></div>
+        <div class="row"><label>X offset</label><input type="range" id="t_x" min="-1.5" max="1.5" step="0.01" value="0"><span class="val" id="tv_x">0.00</span></div>
+        <div class="row"><label>Y offset</label><input type="range" id="t_y" min="-1.5" max="1.5" step="0.01" value="0"><span class="val" id="tv_y">0.00</span></div>
+        <div class="row"><label>Z offset</label><input type="range" id="t_z" min="-1.5" max="1.5" step="0.01" value="0"><span class="val" id="tv_z">0.00</span></div>
+        <div class="row"><button id="t_reset" class="ghost">重置</button><code>也可用鼠标拖拽/滚轮</code></div>
+      </div>
+
+      <div class="card">
+        <h2>③ 手动表情（验证模型）</h2>
+        <div class="row"><label>jawOpen</label><input type="range" id="s_jaw" min="0" max="1" step="0.01" value="0"><span class="val" id="v_jaw">0</span></div>
+        <div class="row"><label>eyeBlink L</label><input type="range" id="s_blink" min="0" max="1" step="0.01" value="0"><span class="val" id="v_blink">0</span></div>
+        <div class="row"><label>mouthSmile L</label><input type="range" id="s_smile" min="0" max="1" step="0.01" value="0"><span class="val" id="v_smile">0</span></div>
+        <div class="row"><label>browInnerUp</label><input type="range" id="s_brow" min="0" max="1" step="0.01" value="0"><span class="val" id="v_brow">0</span></div>
+        <div class="row"><label>tongueOut</label><input type="range" id="s_tongue" min="0" max="1" step="0.01" value="0"><span class="val" id="v_tongue">0</span></div>
+        <div class="row"><label>headYaw</label><input type="range" id="s_yaw" min="-1" max="1" step="0.01" value="0"><span class="val" id="v_yaw">0</span></div>
+      </div>
+
+      <div class="card">
+        <h2>④ 用视频/图片文件测试</h2>
+        <input type="file" id="file" accept="video/*,image/*" />
+        <div class="row" style="margin-top:8px">
+          <button id="playSample" class="ghost">内置样例图</button>
+          <button id="stopFile" class="ghost">停止</button>
+        </div>
+        <img id="frame" alt="" style="margin-top:8px" />
+      </div>
+      <code>redpanda_head.glb · 52 个 ARKit 表情 · head-only · 0.84 MB</code>
+    </aside>
+  </main>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
