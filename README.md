@@ -2,6 +2,11 @@
 
 用 Blender MCP（`mcp-for-blender`）驱动 Blender，把照片/参考图做成**能被浏览器摄像头驱动的 3D 头像**（aniface）。
 
+## 文档
+
+- [AGENTS.md](AGENTS.md) —— 项目级工作约定与踩坑清单（动手前先读）
+- [docs/STATUS.md](docs/STATUS.md) —— 当前问题清单 + 两条流水线的实现步骤
+
 ## 目录结构
 
 ```
@@ -75,3 +80,4 @@ exec(open(r"pipeline.py", encoding="utf-8").read())
 - 小熊猫耳朵是**侧向**的（继承自 raccoon），真正小熊猫是直立耳
 - `tongueOut` 仅小熊猫版本有，人类版本缺
 - 人类头像脸型偏窄长（29 个 2D 约束拟合的局限）
+
