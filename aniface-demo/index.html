@@ -73,6 +73,15 @@
         <label class="chk"><input type="checkbox" id="c_mesh"> 网格</label>
         <label class="chk"><input type="checkbox" id="c_mirror" checked> 镜像</label>
       </div>
+      <div class="row" style="margin-top:6px">
+        <label class="chk" style="flex:0 0 auto"><input type="checkbox" id="blur_on"> 背景虚化</label>
+        <input type="range" id="blur_px" min="2" max="40" step="1" value="14">
+        <span class="val" id="blurv_px">14</span>
+      </div>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="blur_invert"> 反转遮罩</label>
+        <code>虚化只作用于「合成视图」</code>
+      </div>
       <div class="row"><code>需 https:// 或 localhost</code><button id="stopCam" class="ghost" style="padding:4px 10px">停止</button></div>
     </section>
 
@@ -138,6 +147,7 @@
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
+
 
 
 

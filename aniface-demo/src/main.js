@@ -1,12 +1,14 @@
 import { Aniface } from 'aniface'
 import * as THREE from 'three'
-import { FaceLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision'
+import { FaceLandmarker, ImageSegmenter, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision'
 
 // MediaPipe 运行时来源：本地优先（npm run vendor:mediapipe 后可用），失败再退回 CDN
 const SOURCES = [
-  { name: '本地', wasm: '/mediapipe/wasm', model: '/mediapipe/face_landmarker.task' },
+  { name: '本地', wasm: '/mediapipe/wasm', model: '/mediapipe/face_landmarker.task',
+                  seg: '/mediapipe/selfie_segmenter.tflite' },
   { name: 'CDN',  wasm: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm',
-                  model: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task' },
+                  model: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                  seg: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite' },
 ]
 
 const canvas   = document.getElementById('avatar')
@@ -166,6 +168,7 @@ $('start').addEventListener('click', async () => {
     const loop = () => {
       if (!playing || mode !== 'camera') return
       const r = detect(lk, video, performance.now())
+      tickSegmentation(video, performance.now())
       stepAvatar(r)
       fitOverlay(); drawOverlay(r); updateStats(r)
       drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
@@ -208,6 +211,7 @@ async function runOnElement(el, isVideo) {
     const loop = () => {
       if (!playing || mode !== 'file' || video.paused || video.ended) { if (mode==='file') setStatus('播放结束'); return }
       const r = detect(lk, video, performance.now())
+      tickSegmentation(video, performance.now())
       stepAvatar(r)
       fitOverlay(); drawOverlay(r); updateStats(r)
       drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
@@ -221,6 +225,17 @@ async function runOnElement(el, isVideo) {
     lk.setOptions({ runningMode: 'IMAGE' })
     const r = lk.detect(el)
     lk.setOptions({ runningMode: 'VIDEO' })
+    // 图片模式也跑一次分割（虚化对静态图同样生效）
+    const bOnEl = $('blur_on')
+    if (bOnEl && bOnEl.checked && segmenter) {
+      try {
+        segmenter.setOptions({ runningMode: 'IMAGE' })
+        const sr = segmenter.segment(el)
+        hasMask = updateMaskCanvas(sr)
+        if (sr && sr.close) sr.close()
+        segmenter.setOptions({ runningMode: 'VIDEO' })
+      } catch (e) { console.warn('[segmenter] 图片分割失败:', e?.message || e) }
+    }
     octx.drawImage(el, 0, 0, overlay.width, overlay.height)   // 图片画进摄像头面板
     drawOverlay(r, true); updateStats(r)
     if (r?.faceLandmarks?.length) {
@@ -265,6 +280,117 @@ function cpLabels() {
   $('cpv_dy').textContent   = parseFloat($('cp_dy').value).toFixed(2)
 }
 
+// ---------------- 背景虚化（Selfie Segmenter + 2D 合成） ----------------
+let segmenter = null, segTried = false, hasMask = false, segTick = 0
+let offA = null, offB = null, offC = null, maskCanvas = null, maskCtx = null
+
+async function ensureSegmenter() {
+  if (segmenter || segTried) return segmenter
+  segTried = true
+  for (const src of SOURCES) {
+    for (const delegate of ['GPU', 'CPU']) {
+      try {
+        const vision = await FilesetResolver.forVisionTasks(src.wasm)
+        segmenter = await ImageSegmenter.createFromOptions(vision, {
+          baseOptions: { modelAssetPath: src.seg, delegate },
+          runningMode: 'VIDEO',
+          outputConfidenceMasks: true,
+          outputCategoryMask: false
+        })
+        console.log('[segmenter] 就绪:', src.name, delegate)
+        setStatus('背景虚化已就绪 ✅')
+        return segmenter
+      } catch (e) {
+        console.warn('[segmenter] ' + src.name + '/' + delegate + ' 失败:', e?.message || e)
+      }
+    }
+  }
+  setStatus('⚠️ 背景虚化不可用（分割模型加载失败）')
+  return null
+}
+
+function ensureOffscreens(w, h) {
+  if (!offA) {
+    offA = document.createElement('canvas'); offA._c = offA.getContext('2d')
+    offB = document.createElement('canvas'); offB._c = offB.getContext('2d')
+    offC = document.createElement('canvas'); offC._c = offC.getContext('2d')
+    maskCanvas = document.createElement('canvas')
+    maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true })
+  }
+  for (const c of [offA, offB, offC]) if (c.width !== w || c.height !== h) { c.width = w; c.height = h }
+}
+
+// 分割结果 -> alpha 遮罩画布（人物=不透明）
+function updateMaskCanvas(res) {
+  const mask = res && res.confidenceMasks && res.confidenceMasks[0]
+  if (!mask) return false
+  const mw = mask.width, mh = mask.height
+  const arr = mask.getAsFloat32Array()
+  if (maskCanvas.width !== mw || maskCanvas.height !== mh) { maskCanvas.width = mw; maskCanvas.height = mh }
+  const img = maskCtx.createImageData(mw, mh)
+  const invEl = $('blur_invert')
+  const inv = invEl ? invEl.checked : false
+  for (let i = 0; i < mw * mh; i++) {
+    let a = arr[i]
+    if (inv) a = 1 - a
+    img.data[i * 4] = 255; img.data[i * 4 + 1] = 255; img.data[i * 4 + 2] = 255
+    img.data[i * 4 + 3] = Math.max(0, Math.min(1, a)) * 255
+  }
+  maskCtx.putImageData(img, 0, 0)
+  return true
+}
+
+// 每帧（节流）跑一次分割；仅在开启虚化时才跑，省算力
+function tickSegmentation(srcEl, ts) {
+  const onEl = $('blur_on')
+  if (!onEl || !onEl.checked || !segmenter) return
+  if ((segTick++ % 2) !== 0) return
+  try {
+    const res = segmenter.segmentForVideo(srcEl, ts)
+    hasMask = updateMaskCanvas(res)
+    if (res && res.close) res.close()
+  } catch (e) {
+    console.warn('[segmenter] segment 失败:', e?.message || e)
+  }
+}
+
+// 把视频画进合成画布：可选背景虚化（底层模糊 + 上层人物抠图）
+function drawVideoLayer(srcEl, w, h, mirrorL, blurOn, blurPx) {
+  if (!blurOn || !hasMask) {
+    cctx.save()
+    if (mirrorL) { cctx.translate(w, 0); cctx.scale(-1, 1) }
+    cctx.drawImage(srcEl, 0, 0, w, h)
+    cctx.restore()
+    return
+  }
+  ensureOffscreens(w, h)
+  const a = offA._c, b = offB._c, c = offC._c
+  // A: 原始画面（按需镜像）
+  a.setTransform(1, 0, 0, 1, 0, 0); a.clearRect(0, 0, w, h)
+  if (mirrorL) { a.translate(w, 0); a.scale(-1, 1) }
+  a.drawImage(srcEl, 0, 0, w, h)
+  // B: 模糊版（放大一点画，避免边缘出现透明描边）
+  b.setTransform(1, 0, 0, 1, 0, 0); b.clearRect(0, 0, w, h)
+  b.save()
+  b.filter = 'blur(' + blurPx + 'px)'
+  const pad = blurPx * 2
+  b.drawImage(offA, -pad, -pad, w + pad * 2, h + pad * 2)
+  b.restore()
+  // C: 人物抠图（原图 + 遮罩；镜像时遮罩也要一起翻）
+  c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, w, h)
+  c.drawImage(offA, 0, 0)
+  c.globalCompositeOperation = 'destination-in'
+  c.save()
+  if (mirrorL) { c.translate(w, 0); c.scale(-1, 1) }
+  c.imageSmoothingEnabled = true
+  c.drawImage(maskCanvas, 0, 0, w, h)
+  c.restore()
+  c.globalCompositeOperation = 'source-over'
+  // 合成：模糊背景 + 清晰人物
+  cctx.drawImage(offB, 0, 0)
+  cctx.drawImage(offC, 0, 0)
+}
+
 function drawComposite(srcEl, landmarks, srcW, srcH) {
   if (!comp || !cctx || !srcW || !srcH) return
   if (comp.width !== srcW || comp.height !== srcH) { comp.width = srcW; comp.height = srcH }
@@ -272,11 +398,11 @@ function drawComposite(srcEl, landmarks, srcW, srcH) {
   cctx.setTransform(1, 0, 0, 1, 0, 0)
   cctx.clearRect(0, 0, comp.width, comp.height)
 
-  // ① 底层：原始画面
-  cctx.save()
-  if (mirror) { cctx.translate(comp.width, 0); cctx.scale(-1, 1) }
-  cctx.drawImage(srcEl, 0, 0, comp.width, comp.height)
-  cctx.restore()
+  // ① 底层：原始画面（可选背景虚化）
+  const blurOnEl = $('blur_on')
+  const blurOn = blurOnEl ? blurOnEl.checked : false
+  const blurPx = $('blur_px') ? parseFloat($('blur_px').value) : 14
+  drawVideoLayer(srcEl, comp.width, comp.height, mirror, blurOn, blurPx)
 
   const cpOn = $('cp_on') ? $('cp_on').checked : true
   if (!cpOn || !landmarks || !landmarks.length) return
@@ -317,6 +443,26 @@ function drawComposite(srcEl, landmarks, srcW, srcH) {
   else { cctx.translate(dx, dy); cctx.drawImage(av, 0, 0, ww, bh) }   // ★ 必须 translate，否则永远画在 (0,0)
   cctx.restore()
 }
+
+// 背景虚化控件
+function blurLabels() {
+  if ($('blurv_px')) $('blurv_px').textContent = parseInt($('blur_px').value, 10)
+}
+on('blur_px', 'input', () => { blurLabels(); compositeRefresh() })
+on('blur_invert', 'change', () => { compositeRefresh() })
+on('blur_on', 'change', async (e) => {
+  blurLabels()
+  if (e.target.checked) {
+    setStatus('加载背景分割模型…')
+    await ensureSegmenter()
+    if ($('blur_px') && parseFloat($('blur_px').value) < 2) $('blur_px').value = 14
+    blurLabels()
+  } else {
+    hasMask = false
+    setStatus('背景虚化已关闭')
+  }
+  compositeRefresh()
+})
 
 function compositeRefresh() {           // 没有实时源时，拖动滑块也能即时看到效果
   if (lastComp) drawComposite(lastComp.srcEl, lastComp.lms, lastComp.w, lastComp.h)
@@ -437,8 +583,14 @@ async function onSlider() {
 }
 for (const id of Object.values(SP)) on(id, 'input', onSlider)
 
-// 启动时刷新一次合成参数标签
+// 启动时刷新一次标签
 cpLabels()
+blurLabels()
+
+
+
+
+
 
 
 
