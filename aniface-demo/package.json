@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite", "cert": "node scripts/make-cert.mjs",
+    "dev": "vite", "cert": "node scripts/make-cert.mjs", "check": "node scripts/check-ids.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -18,4 +18,5 @@
     "vite": "^7.1.12"
   }
 }
+
 
