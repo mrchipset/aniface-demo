@@ -124,7 +124,7 @@ async function ensureLandmarker() {
 }
 
 // ---------------- 控制项 ----------------
-$('c_mirror').addEventListener('change', (e) => wrap.classList.toggle('mirror', e.target.checked))
+$('c_mirror').addEventListener('change', (e) => { wrap.classList.toggle('mirror', e.target.checked); compositeRefresh() })
 
 // ---------------- 摄像头 ----------------
 $('start').addEventListener('click', async () => {
@@ -154,6 +154,8 @@ $('start').addEventListener('click', async () => {
       if (r?.faceLandmarks?.length) avatar.processLandmarkData(r)
       updateLiveCanvas(video, r?.faceLandmarks?.[0])
       fitOverlay(); drawOverlay(r); updateStats(r)
+      drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
+      lastComp = { srcEl: video, lms: r?.faceLandmarks?.[0], w: video.videoWidth, h: video.videoHeight }
       requestAnimationFrame(loop)
     }
     loop()
@@ -169,6 +171,8 @@ $('stopCam').addEventListener('click', () => {
   if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null }
   video.srcObject = null
   octx.clearRect(0,0,overlay.width,overlay.height)
+  if (cctx) cctx.clearRect(0, 0, comp.width, comp.height)
+  lastComp = null
   resetStats(); $('s_dev').textContent = '-'
   $('start').disabled = false; $('start').textContent = '启动摄像头'
   setStatus('摄像头已停止')
@@ -193,6 +197,8 @@ async function runOnElement(el, isVideo) {
       if (r?.faceLandmarks?.length) avatar.processLandmarkData(r)
       updateLiveCanvas(video, r?.faceLandmarks?.[0])
       fitOverlay(); drawOverlay(r); updateStats(r)
+      drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
+      lastComp = { srcEl: video, lms: r?.faceLandmarks?.[0], w: video.videoWidth, h: video.videoHeight }
       requestAnimationFrame(loop)
     }
     loop()
@@ -205,7 +211,12 @@ async function runOnElement(el, isVideo) {
     octx.drawImage(el, 0, 0, overlay.width, overlay.height)   // 图片画进摄像头面板
     updateLiveCanvas(el, r?.faceLandmarks?.[0])
     drawOverlay(r, true); updateStats(r)
-    if (r?.faceLandmarks?.length) { avatar.processLandmarkData(r); setStatus('图片已应用 ✅（静态，中性表情）') }
+    if (r?.faceLandmarks?.length) {
+      avatar.processLandmarkData(r)
+      drawComposite(el, r.faceLandmarks[0], el.naturalWidth || el.width, el.naturalHeight || el.height)
+      lastComp = { srcEl: el, lms: r.faceLandmarks[0], w: el.naturalWidth || el.width, h: el.naturalHeight || el.height }
+      setStatus('图片已应用 ✅（静态，中性表情）')
+    }
     else setStatus('图片里没检测到人脸')
   }
 }
@@ -229,6 +240,73 @@ $('playSample').addEventListener('click', async () => {
 })
 
 // ---------------- 位置 / 缩放 ----------------
+// ---------------- 合成：把小熊猫贴进摄像头画面 ----------------
+const comp = document.getElementById('composite')
+const cctx = comp ? comp.getContext('2d') : null
+let lastComp = null      // { srcEl, lms, w, h }：拖动滑块时用来重绘
+
+function cpLabels() {
+  if (!$('cp_size')) return
+  $('cpv_size').textContent = parseFloat($('cp_size').value).toFixed(2)
+  $('cpv_dx').textContent   = parseFloat($('cp_dx').value).toFixed(2)
+  $('cpv_dy').textContent   = parseFloat($('cp_dy').value).toFixed(2)
+}
+
+function drawComposite(srcEl, landmarks, srcW, srcH) {
+  if (!comp || !cctx || !srcW || !srcH) return
+  if (comp.width !== srcW || comp.height !== srcH) { comp.width = srcW; comp.height = srcH }
+  const mirror = $('c_mirror') ? $('c_mirror').checked : true
+  cctx.setTransform(1, 0, 0, 1, 0, 0)
+  cctx.clearRect(0, 0, comp.width, comp.height)
+
+  // ① 底层：原始画面
+  cctx.save()
+  if (mirror) { cctx.translate(comp.width, 0); cctx.scale(-1, 1) }
+  cctx.drawImage(srcEl, 0, 0, comp.width, comp.height)
+  cctx.restore()
+
+  const cpOn = $('cp_on') ? $('cp_on').checked : true
+  if (!cpOn || !landmarks || !landmarks.length) return
+
+  // ② 人脸框 -> 整个头（关键点只覆盖面部，向上多留头顶/头发）
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0
+  for (const p of landmarks) {
+    if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x
+    if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y
+  }
+  const fw = x1 - x0, fh = y1 - y0
+  const bx0 = x0 - fw * 0.32, bx1 = x1 + fw * 0.32
+  const by0 = y0 - fh * 0.62, by1 = y1 + fh * 0.18
+
+  const k  = parseFloat($('cp_size').value)
+  const bh = (by1 - by0) * comp.height * k
+  const cx = ((bx0 + bx1) / 2) * comp.width  + parseFloat($('cp_dx').value) * comp.width
+  const cy = ((by0 + by1) / 2) * comp.height + parseFloat($('cp_dy').value) * comp.height
+
+  // ③ 顶层：模型画布（透明背景）；按高度贴合，宽度等比
+  const av = canvas
+  const ww = bh * (av.width / av.height)
+  const dx = cx - ww / 2, dy = cy - bh / 2
+  cctx.save()
+  cctx.imageSmoothingEnabled = true
+  if (mirror) { cctx.translate(dx + ww, dy); cctx.scale(-1, 1); cctx.drawImage(av, 0, 0, ww, bh) }
+  else cctx.drawImage(av, 0, 0, ww, bh)
+  cctx.restore()
+}
+
+function compositeRefresh() {           // 没有实时源时，拖动滑块也能即时看到效果
+  if (lastComp) drawComposite(lastComp.srcEl, lastComp.lms, lastComp.w, lastComp.h)
+}
+for (const id of ['cp_on','cp_size','cp_dx','cp_dy']) {
+  const e = $(id); if (!e) continue
+  e.addEventListener('input',  () => { cpLabels(); compositeRefresh() })
+  e.addEventListener('change', () => { cpLabels(); compositeRefresh() })
+}
+if ($('cp_reset')) $('cp_reset').addEventListener('click', () => {
+  $('cp_size').value = 1.8; $('cp_dx').value = 0; $('cp_dy').value = 0
+  cpLabels(); compositeRefresh(); setStatus('已重置合成参数')
+})
+
 // ---------------- 摄像头贴脸（运行时着色器投影，无需改 GLB） ----------------
 const LF = {
   canvas: document.createElement('canvas'),
@@ -305,7 +383,7 @@ function patchLiveFace() {
 // 每帧把源画面（视频/图片）按人脸框对齐后画进画布；用 alpha 羽化边缘
 function updateLiveCanvas(srcEl, landmarks) {
   const W = LF.canvas.width, H = LF.canvas.height
-  if (!$('lf_on').checked) {            // 关闭时不做逐帧上传，只清一次
+  if (!$('lf_on') || !$('lf_on').checked) {   // 面板不存在或未开启：不做逐帧上传，只清一次
     if (!LF._cleared) { lfCtx.clearRect(0, 0, W, H); if (LF.tex) LF.tex.needsUpdate = true; LF._cleared = true }
     return
   }
@@ -361,7 +439,7 @@ function updateLiveCanvas(srcEl, landmarks) {
 }
 
 function applyLiveMix() {
-  if (!LF.uniforms) return
+  if (!LF.uniforms || !$('lf_on')) return
   const on = $('lf_on').checked
   const mix = parseFloat($('lf_mix').value)
   $('lfv_mix').textContent = mix.toFixed(2)
@@ -372,10 +450,11 @@ function applyLiveMix() {
   avatar?.getRenderer()?.render()
 }
 for (const id of ['lf_on','lf_mix','lf_zoom','lf_dx','lf_dy']) {
-  $(id).addEventListener('input', applyLiveMix)
-  $(id).addEventListener('change', applyLiveMix)
+  const e = $(id); if (!e) continue
+  e.addEventListener('input', applyLiveMix)
+  e.addEventListener('change', applyLiveMix)
 }
-$('lf_reset').addEventListener('click', () => {
+if ($('lf_reset')) $('lf_reset').addEventListener('click', () => {
   $('lf_zoom').value = 1; $('lf_dx').value = 0; $('lf_dy').value = 0; $('lf_mix').value = 0.85
   applyLiveMix(); setStatus('已重置贴脸对齐')
 })

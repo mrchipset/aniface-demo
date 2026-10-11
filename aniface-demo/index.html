@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
 <meta charset="utf-8" />
-<title>Aniface · 小熊猫 + 摄像头原始画面</title>
+<title>Aniface · 小熊猫合成到摄像头画面</title>
 <style>
   * { box-sizing: border-box; }
   body { margin:0; background:#161920; color:#cfd4dc; font-family:system-ui,"Segoe UI",sans-serif; font-size:13px; }
@@ -13,7 +13,7 @@
   .card { background:#22262e; border:1px solid #2f343d; border-radius:10px; padding:10px 12px; }
   .card h2 { font-size:12px; margin:0 0 8px; color:#9fb0cc; font-weight:600; letter-spacing:.4px; }
 
-  #camcard { flex: 0 0 430px; }
+  #camcard { flex: 0 0 400px; }
   .videowrap { position:relative; width:100%; border-radius:8px; overflow:hidden; background:#0d1015; }
   .videowrap.mirror { transform: scaleX(-1); }
   .videowrap video, .videowrap canvas#overlay { display:block; width:100%; height:auto; }
@@ -25,10 +25,11 @@
   .ok { color:#4ade80; font-weight:600; }
   .no { color:#f87171; font-weight:600; }
 
-  #modelcard { flex: 0 0 auto; }
-  canvas#avatar { background:#11141a; border-radius:8px; width:520px; height:520px; display:block; }
+  #compcard { flex: 0 0 auto; }
+  canvas#composite { background:#0d1015; border-radius:8px; display:block; max-width:640px; width:640px; height:auto; }
+  canvas#avatar { background:transparent; border-radius:8px; width:300px; height:300px; display:block; }
 
-  aside { display:flex; flex-direction:column; gap:10px; width:340px; }
+  aside { display:flex; flex-direction:column; gap:10px; width:330px; }
   button { padding:7px 12px; border-radius:8px; border:0; background:#4f7cff; color:#fff; cursor:pointer; font-size:13px; }
   button.ghost { background:#3a4150; }
   button:disabled { background:#39404d; cursor:default; }
@@ -40,11 +41,12 @@
   .chk { display:flex; align-items:center; gap:5px; color:#9fb0cc; font-size:12px; }
   #diag { font-size:11px; color:#7f8899; margin:2px 0 6px; word-break:break-all; }
   code { font-size:11px; color:#7f8899; }
+  .modelbox { display:flex; justify-content:center; }
 </style>
 </head>
 <body>
   <header>
-    <h1>Aniface · 小熊猫 + 摄像头原始画面</h1>
+    <h1>Aniface · 小熊猫合成到摄像头画面</h1>
     <span id="status">未开始</span>
   </header>
 
@@ -74,22 +76,39 @@
       <div class="row"><code>需 https:// 或 localhost</code><button id="stopCam" class="ghost" style="padding:4px 10px">停止</button></div>
     </section>
 
-    <!-- ② 3D 模型 -->
-    <section class="card" id="modelcard">
-      <h2>② 3D 模型</h2>
-      <canvas id="avatar" width="520" height="520"></canvas>
-      <div class="row" style="margin-top:6px"><code>鼠标拖拽旋转 · 滚轮缩放</code></div>
+    <!-- ② 合成视图 -->
+    <section class="card" id="compcard">
+      <h2>② 合成视图（小熊猫贴到画面里）</h2>
+      <canvas id="composite" width="640" height="480"></canvas>
+      <div class="row" style="margin-top:6px">
+        <label class="chk"><input type="checkbox" id="cp_on" checked> 合成</label>
+        <code id="cp_hint">需先有画面（摄像头或文件）</code>
+      </div>
     </section>
 
     <!-- ③ 控制 -->
     <aside>
       <div class="card">
-        <h2>位置 / 缩放</h2>
+        <h2>3D 模型（源）</h2>
+        <div class="modelbox"><canvas id="avatar" width="300" height="300"></canvas></div>
+        <div class="row" style="margin-top:6px"><code>透明背景，用于合成</code></div>
+      </div>
+
+      <div class="card">
+        <h2>合成设置</h2>
+        <div class="row"><label>大小</label><input type="range" id="cp_size" min="0.4" max="3" step="0.01" value="1.8"><span class="val" id="cpv_size">1.80</span></div>
+        <div class="row"><label>偏移 X</label><input type="range" id="cp_dx" min="-0.3" max="0.3" step="0.005" value="0"><span class="val" id="cpv_dx">0.00</span></div>
+        <div class="row"><label>偏移 Y</label><input type="range" id="cp_dy" min="-0.3" max="0.3" step="0.005" value="0"><span class="val" id="cpv_dy">0.00</span></div>
+        <div class="row"><button id="cp_reset" class="ghost">重置合成</button><code>按人脸框自动对位</code></div>
+      </div>
+
+      <div class="card">
+        <h2>位置 / 缩放（模型自身）</h2>
         <div class="row"><label>Scale</label><input type="range" id="t_scale" min="0.2" max="4" step="0.01" value="1"><span class="val" id="tv_scale">1.00</span></div>
         <div class="row"><label>X offset</label><input type="range" id="t_x" min="-1.5" max="1.5" step="0.01" value="0"><span class="val" id="tv_x">0.00</span></div>
         <div class="row"><label>Y offset</label><input type="range" id="t_y" min="-1.5" max="1.5" step="0.01" value="0"><span class="val" id="tv_y">0.00</span></div>
         <div class="row"><label>Z offset</label><input type="range" id="t_z" min="-1.5" max="1.5" step="0.01" value="0"><span class="val" id="tv_z">0.00</span></div>
-        <div class="row"><button id="t_reset" class="ghost">重置</button><code>或拖拽/滚轮</code></div>
+        <div class="row"><button id="t_reset" class="ghost">重置</button><code>鼠标拖拽/滚轮</code></div>
       </div>
 
       <div class="card">
@@ -99,20 +118,6 @@
         <div class="row"><label>mouthSmile L</label><input type="range" id="s_smile" min="0" max="1" step="0.01" value="0"><span class="val" id="v_smile">0</span></div>
         <div class="row"><label>browInnerUp</label><input type="range" id="s_brow" min="0" max="1" step="0.01" value="0"><span class="val" id="v_brow">0</span></div>
         <div class="row"><label>tongueOut</label><input type="range" id="s_tongue" min="0" max="1" step="0.01" value="0"><span class="val" id="v_tongue">0</span></div>
-        <div class="row"><label>headYaw</label><input type="range" id="s_yaw" min="-1" max="1" step="0.01" value="0"><span class="val" id="v_yaw">0</span></div>
-      </div>
-
-      <div class="card">
-        <h2>摄像头贴脸（新）</h2>
-        <div class="row">
-          <label class="chk" style="flex:1"><input type="checkbox" id="lf_on"> 开启贴脸</label>
-          <code id="lf_hint">需先启动摄像头或文件模式</code>
-        </div>
-        <div class="row"><label>强度</label><input type="range" id="lf_mix" min="0" max="1" step="0.01" value="0.85"><span class="val" id="lfv_mix">0.85</span></div>
-        <div class="row"><label>缩放</label><input type="range" id="lf_zoom" min="0.5" max="2" step="0.01" value="1"><span class="val" id="lfv_zoom">1.00</span></div>
-        <div class="row"><label>偏移 X</label><input type="range" id="lf_dx" min="-0.3" max="0.3" step="0.005" value="0"><span class="val" id="lfv_dx">0.00</span></div>
-        <div class="row"><label>偏移 Y</label><input type="range" id="lf_dy" min="-0.3" max="0.3" step="0.005" value="0"><span class="val" id="lfv_dy">0.00</span></div>
-        <div class="row"><button id="lf_reset" class="ghost">重置对齐</button><code>贴的是实时画面</code></div>
       </div>
 
       <div class="card">
@@ -130,3 +135,4 @@
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
+
