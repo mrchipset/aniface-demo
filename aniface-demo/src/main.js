@@ -355,7 +355,16 @@ function stabilizeModel() {
   }
   if (!wrapper) return
   const g = (id) => parseFloat($(id).value)
-  wrapper.scale.setScalar(g('t_scale'))
+  // aniface 的 head-only 分支会把矩阵缩放 40 倍（isFullBodyAvatar()?1:40），
+  // 若不对冲，模型会大 40 倍 —— 只有把 Scale 调到 ~0.025 才看得见。
+  // 这里读内层实际缩放并抵消，使 Scale=1.0 恒等于"自然大小"。
+  let innerScale = 1
+  if (inner) {
+    const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3()
+    inner.matrix.decompose(p, q, s)
+    if (s.x > 1e-6) innerScale = s.x
+  }
+  wrapper.scale.setScalar(g('t_scale') / innerScale)
   wrapper.position.set(g('t_x'), g('t_y'), g('t_z'))
 }
 
@@ -430,6 +439,7 @@ for (const id of Object.values(SP)) on(id, 'input', onSlider)
 
 // 启动时刷新一次合成参数标签
 cpLabels()
+
 
 
 
