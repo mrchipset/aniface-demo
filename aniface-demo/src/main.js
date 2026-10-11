@@ -172,6 +172,7 @@ $('start').addEventListener('click', async () => {
       stepAvatar(r)
       fitOverlay(); drawOverlay(r); updateStats(r)
       drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
+      drawOutput(); drawSelectionOverlay()
       lastComp = { srcEl: video, lms: r?.faceLandmarks?.[0], w: video.videoWidth, h: video.videoHeight }
       requestAnimationFrame(loop)
     }
@@ -215,6 +216,7 @@ async function runOnElement(el, isVideo) {
       stepAvatar(r)
       fitOverlay(); drawOverlay(r); updateStats(r)
       drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
+      drawOutput(); drawSelectionOverlay()
       lastComp = { srcEl: video, lms: r?.faceLandmarks?.[0], w: video.videoWidth, h: video.videoHeight }
       requestAnimationFrame(loop)
     }
@@ -241,6 +243,7 @@ async function runOnElement(el, isVideo) {
     if (r?.faceLandmarks?.length) {
       stepAvatar(r)
       drawComposite(el, r.faceLandmarks[0], el.naturalWidth || el.width, el.naturalHeight || el.height)
+      drawOutput(); drawSelectionOverlay()
       lastComp = { srcEl: el, lms: r.faceLandmarks[0], w: el.naturalWidth || el.width, h: el.naturalHeight || el.height }
       setStatus('图片已应用 ✅（静态，中性表情）')
     }
@@ -279,6 +282,111 @@ function cpLabels() {
   $('cpv_dx').textContent   = parseFloat($('cp_dx').value).toFixed(2)
   $('cpv_dy').textContent   = parseFloat($('cp_dy').value).toFixed(2)
 }
+
+// ---------------- 输出视图：选区裁剪 × 倍率 ----------------
+const outCv = document.getElementById('output')
+let sel = { w: 400, h: 400, cx: 0.5, cy: 0.5, mul: 1 }
+let selDragging = false
+
+function selLabels() {
+  if (!$('selv_w')) return
+  $('selv_w').textContent = Math.round(sel.w)
+  $('selv_h').textContent = Math.round(sel.h)
+  $('selv_x').textContent = sel.cx.toFixed(2)
+  $('selv_y').textContent = sel.cy.toFixed(2)
+  $('selv_mul').textContent = sel.mul.toFixed(2)
+  $('sel_info').textContent = `${Math.round(sel.w)}×${Math.round(sel.h)} → ${Math.round(sel.w * sel.mul)}×${Math.round(sel.h * sel.mul)}`
+}
+
+function selFromUI() {
+  if (!$('sel_w')) return
+  sel.w = parseFloat($('sel_w').value)
+  sel.h = parseFloat($('sel_h').value)
+  sel.cx = parseFloat($('sel_x').value)
+  sel.cy = parseFloat($('sel_y').value)
+  sel.mul = parseFloat($('sel_mul').value)
+  selLabels()
+}
+function selToUI() {
+  if (!$('sel_w')) return
+  $('sel_w').value = sel.w; $('sel_h').value = sel.h
+  $('sel_x').value = sel.cx; $('sel_y').value = sel.cy
+  $('sel_mul').value = sel.mul
+  selLabels()
+}
+
+// 选区矩形（合成画布像素坐标，左上角）
+function selRect(cw, ch) {
+  const w = Math.min(sel.w, cw), h = Math.min(sel.h, ch)
+  let x = sel.cx * cw - w / 2
+  let y = sel.cy * ch - h / 2
+  x = Math.max(0, Math.min(cw - w, x))
+  y = Math.max(0, Math.min(ch - h, y))
+  return { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) }
+}
+
+// 把合成画布的选区裁剪出来，按倍率画到输出画布
+function drawOutput() {
+  if (!outCv || !comp) return
+  const r = selRect(comp.width, comp.height)
+  const ow = Math.max(1, Math.round(r.w * sel.mul))
+  const oh = Math.max(1, Math.round(r.h * sel.mul))
+  if (outCv.width !== ow || outCv.height !== oh) { outCv.width = ow; outCv.height = oh }
+  const c = outCv.getContext('2d')
+  c.setTransform(1, 0, 0, 1, 0, 0)
+  c.clearRect(0, 0, ow, oh)
+  c.imageSmoothingEnabled = true
+  c.imageSmoothingQuality = 'high'
+  c.drawImage(comp, r.x, r.y, r.w, r.h, 0, 0, ow, oh)
+}
+
+// 在合成视图上画出选区（半透明遮罩 + 虚线框 + 尺寸标注）
+function drawSelectionOverlay() {
+  if (!comp || !cctx) return
+  const r = selRect(comp.width, comp.height)
+  cctx.save()
+  cctx.fillStyle = 'rgba(0,0,0,0.38)'
+  cctx.beginPath()
+  cctx.rect(0, 0, comp.width, comp.height)
+  cctx.rect(r.x, r.y, r.w, r.h)
+  cctx.fill('evenodd')
+  cctx.strokeStyle = '#4f7cff'
+  cctx.lineWidth = Math.max(2, comp.width / 500)
+  cctx.setLineDash([10, 6])
+  cctx.strokeRect(r.x, r.y, r.w, r.h)
+  cctx.setLineDash([])
+  cctx.fillStyle = '#4f7cff'
+  cctx.font = 'bold ' + Math.max(14, comp.width / 45) + 'px system-ui,sans-serif'
+  cctx.fillText(Math.round(r.w) + '×' + Math.round(r.h) + ' → ' + Math.round(r.w * sel.mul) + '×' + Math.round(r.h * sel.mul),
+                r.x + 6, Math.max(20, r.y - 8))
+  cctx.restore()
+}
+
+// 在合成视图上拖拽移动选区
+function selMoveTo(ev) {
+  const rect = comp.getBoundingClientRect()
+  if (!rect.width || !rect.height) return
+  sel.cx = Math.min(1, Math.max(0, (ev.clientX - rect.left) / rect.width))
+  sel.cy = Math.min(1, Math.max(0, (ev.clientY - rect.top) / rect.height))
+  selToUI()
+  compositeRefresh()
+}
+if (comp) {
+  comp.style.cursor = 'crosshair'
+  comp.addEventListener('pointerdown', (e) => { selDragging = true; comp.setPointerCapture(e.pointerId); selMoveTo(e) })
+  comp.addEventListener('pointermove', (e) => { if (selDragging) selMoveTo(e) })
+  comp.addEventListener('pointerup',   (e) => { selDragging = false })
+  comp.addEventListener('pointercancel', () => { selDragging = false })
+}
+
+for (const id of ['sel_w','sel_h','sel_x','sel_y','sel_mul']) {
+  on(id, 'input', () => { selFromUI(); compositeRefresh() })
+}
+if ($('sel_reset')) $('sel_reset').addEventListener('click', () => {
+  sel = { w: 400, h: 400, cx: 0.5, cy: 0.5, mul: 1 }
+  selToUI(); compositeRefresh(); setStatus('已重置输出选区')
+})
+selToUI()
 
 // ---------------- 背景虚化（Selfie Segmenter + 2D 合成） ----------------
 let segmenter = null, segTried = false, hasMask = false, segTick = 0
@@ -487,7 +595,10 @@ on('blur_on', 'change', async (e) => {
 })
 
 function compositeRefresh() {           // 没有实时源时，拖动滑块也能即时看到效果
-  if (lastComp) drawComposite(lastComp.srcEl, lastComp.lms, lastComp.w, lastComp.h)
+  if (lastComp) {
+    drawComposite(lastComp.srcEl, lastComp.lms, lastComp.w, lastComp.h)
+    drawOutput(); drawSelectionOverlay()
+  }
 }
 for (const id of ['cp_on','cp_size','cp_dx','cp_dy']) {
   const e = $(id); if (!e) continue
@@ -608,6 +719,8 @@ for (const id of Object.values(SP)) on(id, 'input', onSlider)
 // 启动时刷新一次标签
 cpLabels()
 blurLabels()
+
+
 
 
 

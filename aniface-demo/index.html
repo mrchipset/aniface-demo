@@ -115,6 +115,18 @@
       </div>
 
       <div class="card">
+        <h2>输出视图（选区裁剪 × 倍率）</h2>
+        <div class="modelbox"><canvas id="output" width="320" height="320"></canvas></div>
+        <div class="row"><label>选区宽</label><input type="range" id="sel_w" min="50" max="1920" step="1" value="400"><span class="val" id="selv_w">400</span></div>
+        <div class="row"><label>选区高</label><input type="range" id="sel_h" min="50" max="1920" step="1" value="400"><span class="val" id="selv_h">400</span></div>
+        <div class="row"><label>位置 X</label><input type="range" id="sel_x" min="0" max="1" step="0.001" value="0.5"><span class="val" id="selv_x">0.50</span></div>
+        <div class="row"><label>位置 Y</label><input type="range" id="sel_y" min="0" max="1" step="0.001" value="0.5"><span class="val" id="selv_y">0.50</span></div>
+        <div class="row"><label>输出倍率</label><input type="range" id="sel_mul" min="0.25" max="4" step="0.05" value="1"><span class="val" id="selv_mul">1.00</span></div>
+        <div class="row"><button id="sel_reset" class="ghost">重置选区</button><code id="sel_info">400×400 → 400×400</code></div>
+        <div class="row"><code>提示：在合成视图里可直接拖拽移动选区</code></div>
+      </div>
+
+      <div class="card">
         <h2>位置 / 缩放（模型自身）</h2>
         <div class="row"><label>Scale</label><input type="range" id="t_scale" min="0.1" max="8" step="0.01" value="1"><span class="val" id="tv_scale">1.00</span></div>
         <div class="row"><label>X offset</label><input type="range" id="t_x" min="-6" max="6" step="0.01" value="0"><span class="val" id="tv_x">0.00</span></div>
