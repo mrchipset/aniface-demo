@@ -15,6 +15,7 @@ const wrap     = document.getElementById('videowrap')
 const statusEl = document.getElementById('status')
 const setStatus = (t) => { statusEl.textContent = t; console.log('[status]', t) }
 const $ = (id) => document.getElementById(id)
+const on = (id, ev, fn) => { const e = $(id); if (e) e.addEventListener(ev, fn) }   // 元素可能已被移除
 
 let avatar = null, landmarker = null, camStream = null, playing = false, wrapper = null
 let mode = 'idle'          // idle | camera | file
@@ -147,7 +148,7 @@ $('start').addEventListener('click', async () => {
     const lk = await ensureLandmarker()
     playing = true; mode = 'camera'
     setStatus('摄像头运行中 ✅'); btn.textContent = '运行中'
-    $('lf_hint').textContent = '已就绪，勾选「开启贴脸」'
+    if ($('cp_hint')) $('cp_hint').textContent = '已就绪'
     const loop = () => {
       if (!playing || mode !== 'camera') return
       const r = detect(lk, video, performance.now())
@@ -440,13 +441,13 @@ function updateLiveCanvas(srcEl, landmarks) {
 
 function applyLiveMix() {
   if (!LF.uniforms || !$('lf_on')) return
-  const on = $('lf_on').checked
+  const isOn = $('lf_on').checked
   const mix = parseFloat($('lf_mix').value)
   $('lfv_mix').textContent = mix.toFixed(2)
   $('lfv_zoom').textContent = parseFloat($('lf_zoom').value).toFixed(2)
   $('lfv_dx').textContent = parseFloat($('lf_dx').value).toFixed(2)
   $('lfv_dy').textContent = parseFloat($('lf_dy').value).toFixed(2)
-  LF.uniforms.uLive.value = on ? mix : 0
+  LF.uniforms.uLive.value = isOn ? mix : 0
   avatar?.getRenderer()?.render()
 }
 for (const id of ['lf_on','lf_mix','lf_zoom','lf_dx','lf_dy']) {
@@ -491,12 +492,18 @@ async function onSlider() {
     m.set(MAP[k], v)
   }
   a.updateBlendshapes(m)
-  const yaw = parseFloat($(SP.yaw).value)
-  $('v_yaw').textContent = yaw.toFixed(2)
-  const sc = a.getScene()
-  if (sc) { sc.matrixAutoUpdate = true; sc.rotation.y = yaw * 0.6; sc.updateMatrix() }
+  const yawEl = $(SP.yaw)
+  if (yawEl) {
+    const yaw = parseFloat(yawEl.value)
+    if ($('v_yaw')) $('v_yaw').textContent = yaw.toFixed(2)
+    const sc = a.getScene()
+    if (sc) { sc.matrixAutoUpdate = true; sc.rotation.y = yaw * 0.6; sc.updateMatrix() }
+  }
   avatar.getRenderer().render()
 }
-for (const id of Object.values(SP)) $(id).addEventListener('input', onSlider)
+for (const id of Object.values(SP)) on(id, 'input', onSlider)
+
+// 启动时刷新一次合成参数标签
+cpLabels()
 
 
