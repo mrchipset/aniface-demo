@@ -44,11 +44,12 @@ async function ensureAvatar() {
       mouthSmileLeft: 1.1, mouthSmileRight: 1.1, browInnerUp: 1.2
     },
     modelOptions: { scale: 1.0, center: true, autoRotate: false, rotation: 0 },
-    onReady: () => { setStatus('模型就绪 ✅'); ensureWrapper(); applyTransform() },
+    onReady: () => { setStatus('模型就绪 ✅'); ensureWrapper(); patchLiveFace(); applyTransform() },
     onError: (e) => setStatus('模型错误: ' + e.message)
   })
   await avatar.initialize()
   ensureWrapper()
+  patchLiveFace()
   return avatar
 }
 function ensureWrapper() {
@@ -146,10 +147,12 @@ $('start').addEventListener('click', async () => {
     const lk = await ensureLandmarker()
     playing = true; mode = 'camera'
     setStatus('摄像头运行中 ✅'); btn.textContent = '运行中'
+    $('lf_hint').textContent = '已就绪，勾选「开启贴脸」'
     const loop = () => {
       if (!playing || mode !== 'camera') return
       const r = detect(lk, video, performance.now())
       if (r?.faceLandmarks?.length) avatar.processLandmarkData(r)
+      updateLiveCanvas(video, r?.faceLandmarks?.[0])
       fitOverlay(); drawOverlay(r); updateStats(r)
       requestAnimationFrame(loop)
     }
@@ -188,6 +191,7 @@ async function runOnElement(el, isVideo) {
       if (!playing || mode !== 'file' || video.paused || video.ended) { if (mode==='file') setStatus('播放结束'); return }
       const r = detect(lk, video, performance.now())
       if (r?.faceLandmarks?.length) avatar.processLandmarkData(r)
+      updateLiveCanvas(video, r?.faceLandmarks?.[0])
       fitOverlay(); drawOverlay(r); updateStats(r)
       requestAnimationFrame(loop)
     }
@@ -199,6 +203,7 @@ async function runOnElement(el, isVideo) {
     const r = lk.detect(el)
     lk.setOptions({ runningMode: 'VIDEO' })
     octx.drawImage(el, 0, 0, overlay.width, overlay.height)   // 图片画进摄像头面板
+    updateLiveCanvas(el, r?.faceLandmarks?.[0])
     drawOverlay(r, true); updateStats(r)
     if (r?.faceLandmarks?.length) { avatar.processLandmarkData(r); setStatus('图片已应用 ✅（静态，中性表情）') }
     else setStatus('图片里没检测到人脸')
@@ -224,6 +229,157 @@ $('playSample').addEventListener('click', async () => {
 })
 
 // ---------------- 位置 / 缩放 ----------------
+// ---------------- 摄像头贴脸（运行时着色器投影，无需改 GLB） ----------------
+const LF = {
+  canvas: document.createElement('canvas'),
+  tex: null, uniforms: null, ready: false,
+  // 脸部在投影 UV 中的目标矩形，默认值来自 Blender 端的投影参数
+  box: { u0: 0.30, u1: 0.70, v0: 0.28, v1: 0.62 },
+}
+LF.canvas.width = LF.canvas.height = 512
+const lfCtx = LF.canvas.getContext('2d')
+
+function ensureLiveTexture() {
+  if (LF.tex) return LF.tex
+  const t = new THREE.CanvasTexture(LF.canvas)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.flipY = true
+  t.minFilter = THREE.LinearFilter
+  t.magFilter = THREE.LinearFilter
+  t.generateMipmaps = false
+  LF.tex = t
+  return t
+}
+
+// 把头部材质的片元着色器打补丁：按局部坐标算平面投影 UV，用画布的 alpha 做遮罩混入
+function patchLiveFace() {
+  if (LF.ready) return
+  const scene = avatar?.getRenderer()?.getScene()
+  if (!scene) return
+  let head = null
+  scene.traverse(o => { if (!head && o.isMesh && o.morphTargetDictionary) head = o })
+  if (!head) return
+  const geo = head.geometry
+  if (!geo.boundingBox) geo.computeBoundingBox()
+  const bb = geo.boundingBox
+  // 与 Blender 端一致：u 覆盖 x，v 覆盖 y（模型 up），范围 U0..U1 / V0..V1
+  const U0 = 0.20, U1 = 0.82, V0 = 0.19, V1 = 0.86
+  const bu = (U1 - U0) / (bb.max.x - bb.min.x), au = U0 - bu * bb.min.x
+  const bv = (V1 - V0) / (bb.max.y - bb.min.y), av = V0 - bv * bb.min.y
+  const uni = {
+    uLive:    { value: 0 },
+    uLiveMap: { value: ensureLiveTexture() },
+    uProj:    { value: new THREE.Vector4(au, bu, av, bv) },
+  }
+  LF.uniforms = uni
+  const patch = (mat) => {
+    mat.onBeforeCompile = (shader) => {
+      // 保险：结构不匹配就跳过，避免整个材质编译失败
+      if (!shader.vertexShader.includes('#include <begin_vertex>') ||
+          !shader.fragmentShader.includes('#include <map_fragment>')) {
+        console.warn('[liveface] 着色器结构不匹配，跳过注入')
+        return
+      }
+      Object.assign(shader.uniforms, uni)
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nuniform vec4 uProj;\nvarying vec2 vLiveUV;\nvarying vec3 vLiveN;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\n  vLiveUV = vec2(uProj.x + uProj.y*transformed.x, uProj.z + uProj.w*transformed.y);\n  vLiveN = normal;')
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform float uLive;\nuniform sampler2D uLiveMap;\nvarying vec2 vLiveUV;\nvarying vec3 vLiveN;')
+        .replace('#include <map_fragment>', [
+          '#include <map_fragment>',
+          'if (uLive > 0.001) {',
+          '  float front = smoothstep(0.05, 0.45, vLiveN.z);',
+          '  vec4 live = texture2D(uLiveMap, clamp(vLiveUV, 0.0, 1.0));',
+          '  diffuseColor.rgb = mix(diffuseColor.rgb, live.rgb, uLive * front * live.a);',
+          '}',
+        ].join('\n'))
+    }
+    mat.needsUpdate = true
+  }
+  if (Array.isArray(head.material)) head.material.forEach(patch); else patch(head.material)
+  LF.ready = true
+  console.log('[liveface] patched on mesh:', head.name)
+}
+
+// 每帧把源画面（视频/图片）按人脸框对齐后画进画布；用 alpha 羽化边缘
+function updateLiveCanvas(srcEl, landmarks) {
+  const W = LF.canvas.width, H = LF.canvas.height
+  if (!$('lf_on').checked) {            // 关闭时不做逐帧上传，只清一次
+    if (!LF._cleared) { lfCtx.clearRect(0, 0, W, H); if (LF.tex) LF.tex.needsUpdate = true; LF._cleared = true }
+    return
+  }
+  LF._cleared = false
+  lfCtx.setTransform(1, 0, 0, 1, 0, 0)
+  lfCtx.globalCompositeOperation = 'source-over'
+  lfCtx.clearRect(0, 0, W, H)
+  if (LF.tex) LF.tex.needsUpdate = true
+  if (!srcEl || !landmarks || !landmarks.length) return
+
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0
+  for (const p of landmarks) {
+    if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x
+    if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y
+  }
+  const fw = x1 - x0, fh = y1 - y0
+  x0 -= fw * 0.10; x1 += fw * 0.10
+  // 目标矩形对应「下巴 ~ 额头上方」，眼位约落在矩形 53% 高度处（与模型眼睛的 UV 位置吻合）
+  y0 -= fh * 0.28; y1 += fh * 0.08
+
+  const zoom = parseFloat($('lf_zoom').value), dxo = parseFloat($('lf_dx').value), dyo = parseFloat($('lf_dy').value)
+  let u0 = LF.box.u0, u1 = LF.box.u1, v0 = LF.box.v0, v1 = LF.box.v1
+  const cu = (u0 + u1) / 2 + dxo, cv = (v0 + v1) / 2 + dyo
+  u0 = cu - (cu - u0) * zoom; u1 = cu + (u1 - cu) * zoom
+  v0 = cv - (cv - v0) * zoom; v1 = cv + (v1 - cv) * zoom
+
+  const dx = u0 * W, dy = (1 - v1) * H
+  const dw = (u1 - u0) * W, dh = (v1 - v0) * H
+  const sw = srcEl.videoWidth || srcEl.naturalWidth || srcEl.width
+  const sh = srcEl.videoHeight || srcEl.naturalHeight || srcEl.height
+  const sx = x0 * sw, sy = y0 * sh, sw2 = (x1 - x0) * sw, sh2 = (y1 - y0) * sh
+
+  lfCtx.save()
+  lfCtx.imageSmoothingEnabled = true
+  if ($('c_mirror').checked) {
+    lfCtx.translate(dx + dw, dy); lfCtx.scale(-1, 1)
+    lfCtx.drawImage(srcEl, sx, sy, sw2, sh2, 0, 0, dw, dh)
+  } else {
+    lfCtx.drawImage(srcEl, sx, sy, sw2, sh2, dx, dy, dw, dh)
+  }
+  lfCtx.restore()
+
+  // 边缘羽化：用径向渐变把矩形边缘的 alpha 压下去
+  lfCtx.globalCompositeOperation = 'destination-in'
+  const cx = dx + dw / 2, cy = dy + dh / 2
+  const g = lfCtx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(dw, dh) * 0.62)
+  g.addColorStop(0.72, 'rgba(0,0,0,1)')
+  g.addColorStop(1.00, 'rgba(0,0,0,0)')
+  lfCtx.fillStyle = g
+  lfCtx.fillRect(dx, dy, dw, dh)
+  lfCtx.globalCompositeOperation = 'source-over'
+  if (LF.tex) LF.tex.needsUpdate = true
+}
+
+function applyLiveMix() {
+  if (!LF.uniforms) return
+  const on = $('lf_on').checked
+  const mix = parseFloat($('lf_mix').value)
+  $('lfv_mix').textContent = mix.toFixed(2)
+  $('lfv_zoom').textContent = parseFloat($('lf_zoom').value).toFixed(2)
+  $('lfv_dx').textContent = parseFloat($('lf_dx').value).toFixed(2)
+  $('lfv_dy').textContent = parseFloat($('lf_dy').value).toFixed(2)
+  LF.uniforms.uLive.value = on ? mix : 0
+  avatar?.getRenderer()?.render()
+}
+for (const id of ['lf_on','lf_mix','lf_zoom','lf_dx','lf_dy']) {
+  $(id).addEventListener('input', applyLiveMix)
+  $(id).addEventListener('change', applyLiveMix)
+}
+$('lf_reset').addEventListener('click', () => {
+  $('lf_zoom').value = 1; $('lf_dx').value = 0; $('lf_dy').value = 0; $('lf_mix').value = 0.85
+  applyLiveMix(); setStatus('已重置贴脸对齐')
+})
+
 const T = ['t_scale','t_x','t_y','t_z']
 function applyTransform() {
   if (!wrapper) return

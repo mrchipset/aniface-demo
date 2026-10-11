@@ -103,6 +103,19 @@
       </div>
 
       <div class="card">
+        <h2>摄像头贴脸（新）</h2>
+        <div class="row">
+          <label class="chk" style="flex:1"><input type="checkbox" id="lf_on"> 开启贴脸</label>
+          <code id="lf_hint">需先启动摄像头或文件模式</code>
+        </div>
+        <div class="row"><label>强度</label><input type="range" id="lf_mix" min="0" max="1" step="0.01" value="0.85"><span class="val" id="lfv_mix">0.85</span></div>
+        <div class="row"><label>缩放</label><input type="range" id="lf_zoom" min="0.5" max="2" step="0.01" value="1"><span class="val" id="lfv_zoom">1.00</span></div>
+        <div class="row"><label>偏移 X</label><input type="range" id="lf_dx" min="-0.3" max="0.3" step="0.005" value="0"><span class="val" id="lfv_dx">0.00</span></div>
+        <div class="row"><label>偏移 Y</label><input type="range" id="lf_dy" min="-0.3" max="0.3" step="0.005" value="0"><span class="val" id="lfv_dy">0.00</span></div>
+        <div class="row"><button id="lf_reset" class="ghost">重置对齐</button><code>贴的是实时画面</code></div>
+      </div>
+
+      <div class="card">
         <h2>用视频/图片文件测试</h2>
         <input type="file" id="file" accept="video/*,image/*" />
         <div class="row" style="margin-top:8px">
