@@ -285,7 +285,8 @@ function cpLabels() {
 
 // ---------------- 输出视图：选区裁剪 × 倍率 ----------------
 const outCv = document.getElementById('output')
-let sel = { w: 400, h: 400, cx: 0.5, cy: 0.5, mul: 1 }
+let sel = { w: 400, h: 400, cx: 0.5, cy: 0.5, mul: 1, mask: 'none', radius: 18, feather: 0 }
+let maskShapeCv = null, maskShapeCtx = null
 let selDragging = false
 
 function selLabels() {
@@ -295,7 +296,11 @@ function selLabels() {
   $('selv_x').textContent = sel.cx.toFixed(2)
   $('selv_y').textContent = sel.cy.toFixed(2)
   $('selv_mul').textContent = sel.mul.toFixed(2)
-  $('sel_info').textContent = `${Math.round(sel.w)}×${Math.round(sel.h)} → ${Math.round(sel.w * sel.mul)}×${Math.round(sel.h * sel.mul)}`
+  const maskName = { none: '无', round: '圆角', circle: '圆形' }[sel.mask] || '无'
+  if ($('selv_mask')) $('selv_mask').textContent = maskName
+  if ($('selv_radius')) $('selv_radius').textContent = Math.round(sel.radius) + '%'
+  if ($('selv_feather')) $('selv_feather').textContent = Math.round(sel.feather)
+  $('sel_info').textContent = `${Math.round(sel.w)}×${Math.round(sel.h)} → ${Math.round(sel.w * sel.mul)}×${Math.round(sel.h * sel.mul)}` + (sel.mask !== 'none' ? ` · ${maskName}` : '')
 }
 
 function selFromUI() {
@@ -305,6 +310,9 @@ function selFromUI() {
   sel.cx = parseFloat($('sel_x').value)
   sel.cy = parseFloat($('sel_y').value)
   sel.mul = parseFloat($('sel_mul').value)
+  if ($('sel_mask')) sel.mask = $('sel_mask').value
+  if ($('sel_radius')) sel.radius = parseFloat($('sel_radius').value)
+  if ($('sel_feather')) sel.feather = parseFloat($('sel_feather').value)
   selLabels()
 }
 function selToUI() {
@@ -312,6 +320,9 @@ function selToUI() {
   $('sel_w').value = sel.w; $('sel_h').value = sel.h
   $('sel_x').value = sel.cx; $('sel_y').value = sel.cy
   $('sel_mul').value = sel.mul
+  if ($('sel_mask')) $('sel_mask').value = sel.mask
+  if ($('sel_radius')) $('sel_radius').value = sel.radius
+  if ($('sel_feather')) $('sel_feather').value = sel.feather
   selLabels()
 }
 
@@ -323,6 +334,44 @@ function selRect(cw, ch) {
   x = Math.max(0, Math.min(cw - w, x))
   y = Math.max(0, Math.min(ch - h, y))
   return { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) }
+}
+
+// ---- 蒙版：圆角矩形 / 圆形（带边缘羽化）----
+function maskPath(ctx, w, h, shape, radiusPct) {
+  ctx.beginPath()
+  if (shape === 'circle') {
+    ctx.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, Math.PI * 2)
+  } else {
+    const r = Math.max(0, Math.min(w, h) * (radiusPct / 100) / 2) * 2
+    const rr = Math.min(r, Math.min(w, h) / 2)
+    if (rr <= 0.5) { ctx.rect(0, 0, w, h); return }
+    if (ctx.roundRect) { ctx.roundRect(0, 0, w, h, rr); return }
+    // 兼容老浏览器：手工圆角路径
+    ctx.moveTo(rr, 0)
+    ctx.lineTo(w - rr, 0); ctx.quadraticCurveTo(w, 0, w, rr)
+    ctx.lineTo(w, h - rr); ctx.quadraticCurveTo(w, h, w - rr, h)
+    ctx.lineTo(rr, h);     ctx.quadraticCurveTo(0, h, 0, h - rr)
+    ctx.lineTo(0, rr);     ctx.quadraticCurveTo(0, 0, rr, 0)
+    ctx.closePath()
+  }
+}
+
+function applyOutputMask(c, ow, oh) {
+  if (!sel.mask || sel.mask === 'none') return
+  if (!maskShapeCv) { maskShapeCv = document.createElement('canvas'); maskShapeCtx = maskShapeCv.getContext('2d') }
+  if (maskShapeCv.width !== ow || maskShapeCv.height !== oh) { maskShapeCv.width = ow; maskShapeCv.height = oh }
+  const m = maskShapeCtx
+  m.setTransform(1, 0, 0, 1, 0, 0)
+  m.clearRect(0, 0, ow, oh)
+  m.save()
+  if (sel.feather > 0) m.filter = 'blur(' + sel.feather + 'px)'
+  m.fillStyle = '#fff'
+  maskPath(m, ow, oh, sel.mask, sel.radius)
+  m.fill()
+  m.restore()
+  c.globalCompositeOperation = 'destination-in'
+  c.drawImage(maskShapeCv, 0, 0)
+  c.globalCompositeOperation = 'source-over'
 }
 
 // 把合成画布的选区裁剪出来，按倍率画到输出画布
@@ -338,6 +387,7 @@ function drawOutput() {
   c.imageSmoothingEnabled = true
   c.imageSmoothingQuality = 'high'
   c.drawImage(comp, r.x, r.y, r.w, r.h, 0, 0, ow, oh)
+  applyOutputMask(c, ow, oh)
 }
 
 // 在合成视图上画出选区（半透明遮罩 + 虚线框 + 尺寸标注）
@@ -379,7 +429,7 @@ if (comp) {
   comp.addEventListener('pointercancel', () => { selDragging = false })
 }
 
-for (const id of ['sel_w','sel_h','sel_x','sel_y','sel_mul']) {
+for (const id of ['sel_w','sel_h','sel_x','sel_y','sel_mul','sel_mask','sel_radius','sel_feather']) {
   on(id, 'input', () => { selFromUI(); compositeRefresh() })
 }
 if ($('sel_reset')) $('sel_reset').addEventListener('click', () => {
@@ -719,6 +769,8 @@ for (const id of Object.values(SP)) on(id, 'input', onSlider)
 // 启动时刷新一次标签
 cpLabels()
 blurLabels()
+
+
 
 
 

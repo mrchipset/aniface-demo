@@ -123,6 +123,16 @@
         <div class="row"><label>位置 Y</label><input type="range" id="sel_y" min="0" max="1" step="0.001" value="0.5"><span class="val" id="selv_y">0.50</span></div>
         <div class="row"><label>输出倍率</label><input type="range" id="sel_mul" min="0.25" max="4" step="0.05" value="1"><span class="val" id="selv_mul">1.00</span></div>
         <div class="row"><button id="sel_reset" class="ghost">重置选区</button><code id="sel_info">400×400 → 400×400</code></div>
+        <div class="row"><label>蒙版</label>
+          <select id="sel_mask">
+            <option value="none">无</option>
+            <option value="round">圆角矩形</option>
+            <option value="circle">圆形</option>
+          </select>
+          <span class="val" id="selv_mask">无</span>
+        </div>
+        <div class="row"><label>圆角</label><input type="range" id="sel_radius" min="0" max="50" step="1" value="18"><span class="val" id="selv_radius">18%</span></div>
+        <div class="row"><label>边缘羽化</label><input type="range" id="sel_feather" min="0" max="30" step="1" value="0"><span class="val" id="selv_feather">0</span></div>
         <div class="row"><code>提示：在合成视图里可直接拖拽移动选区</code></div>
       </div>
 
