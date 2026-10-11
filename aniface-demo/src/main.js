@@ -314,7 +314,7 @@ function drawComposite(srcEl, landmarks, srcW, srcH) {
   // 这里必须用与画面相反的翻转策略，否则会出现双重镜像、动作反了
   const pasteMirror = !mirror
   if (pasteMirror) { cctx.translate(dx + ww, dy); cctx.scale(-1, 1); cctx.drawImage(av, 0, 0, ww, bh) }
-  else cctx.drawImage(av, 0, 0, ww, bh)
+  else { cctx.translate(dx, dy); cctx.drawImage(av, 0, 0, ww, bh) }   // ★ 必须 translate，否则永远画在 (0,0)
   cctx.restore()
 }
 
@@ -439,6 +439,7 @@ for (const id of Object.values(SP)) on(id, 'input', onSlider)
 
 // 启动时刷新一次合成参数标签
 cpLabels()
+
 
 
 
