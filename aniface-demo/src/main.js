@@ -166,7 +166,7 @@ $('start').addEventListener('click', async () => {
     const loop = () => {
       if (!playing || mode !== 'camera') return
       const r = detect(lk, video, performance.now())
-      if (r?.faceLandmarks?.length) { avatar.processLandmarkData(r); stabilizeModel() }
+      stepAvatar(r)
       fitOverlay(); drawOverlay(r); updateStats(r)
       drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
       lastComp = { srcEl: video, lms: r?.faceLandmarks?.[0], w: video.videoWidth, h: video.videoHeight }
@@ -208,7 +208,7 @@ async function runOnElement(el, isVideo) {
     const loop = () => {
       if (!playing || mode !== 'file' || video.paused || video.ended) { if (mode==='file') setStatus('播放结束'); return }
       const r = detect(lk, video, performance.now())
-      if (r?.faceLandmarks?.length) { avatar.processLandmarkData(r); stabilizeModel() }
+      stepAvatar(r)
       fitOverlay(); drawOverlay(r); updateStats(r)
       drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
       lastComp = { srcEl: video, lms: r?.faceLandmarks?.[0], w: video.videoWidth, h: video.videoHeight }
@@ -224,7 +224,7 @@ async function runOnElement(el, isVideo) {
     octx.drawImage(el, 0, 0, overlay.width, overlay.height)   // 图片画进摄像头面板
     drawOverlay(r, true); updateStats(r)
     if (r?.faceLandmarks?.length) {
-      avatar.processLandmarkData(r); stabilizeModel()
+      stepAvatar(r)
       drawComposite(el, r.faceLandmarks[0], el.naturalWidth || el.width, el.naturalHeight || el.height)
       lastComp = { srcEl: el, lms: r.faceLandmarks[0], w: el.naturalWidth || el.width, h: el.naturalHeight || el.height }
       setStatus('图片已应用 ✅（静态，中性表情）')
@@ -336,12 +336,25 @@ const T = ['t_scale','t_x','t_y','t_z']
 // 否则模型会在画布里跑偏，出现"只剩半张脸"。旋转保持不变。
 function stabilizeModel() {
   const inner = avatar?.getRenderer()?.getAvatar()?.getScene()
-  if (!inner || !wrapper) return
-  const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3()
-  inner.matrix.decompose(p, q, s)
+  if (inner) {
+    // 直接清零模型根矩阵的平移分量（只保留旋转/缩放）。
+    // 不能用 wrapper.position 去抵消：人脸矩阵的平移量级与模型空间不一致，会把模型推到相机跟前。
+    const e = inner.matrix.elements
+    e[12] = 0; e[13] = 0; e[14] = 0
+  }
+  if (!wrapper) return
   const g = (id) => parseFloat($(id).value)
-  const ws = g('t_scale')
-  wrapper.position.set(g('t_x') - p.x * ws, g('t_y') - p.y * ws, g('t_z') - p.z * ws)
+  wrapper.scale.setScalar(g('t_scale'))
+  wrapper.position.set(g('t_x'), g('t_y'), g('t_z'))
+}
+
+// 一步到位：更新 morph + 矩阵 -> 清平移 -> 渲染。
+// 必须在 render 之前清平移，否则当前帧仍是被推偏的画面。
+function stepAvatar(r) {
+  const rnd = avatar?.getRenderer()
+  if (!rnd) return
+  if (r?.faceLandmarks?.length) { rnd.processLandmarks(r); stabilizeModel() }
+  rnd.render()
 }
 
 function applyTransform() {
@@ -388,6 +401,7 @@ for (const id of Object.values(SP)) on(id, 'input', onSlider)
 
 // 启动时刷新一次合成参数标签
 cpLabels()
+
 
 
 
