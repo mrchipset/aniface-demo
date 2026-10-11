@@ -59,6 +59,8 @@
 | 模型被裁成半张脸 | aniface 把人脸矩阵的**平移分量**写进模型根节点 | 每帧清零 `matrix.elements[12..14]`（须在 render 前） |
 | Scale 必须调到 0.1 才看见，只见一张大嘴 | aniface head-only 把矩阵**放大 40 倍** | 读内层实际缩放并抵消：`wrapper.scale = 用户Scale / innerScale` |
 | 偏移过的模型被推到相机跟前变全黑 | 用 `wrapper.position - p*scale` 抵消平移，量级不一致 | 改为直接清零矩阵平移（尺度无关） |
+| **背景虚化完全无效**（怎么勾都没反应） | 延迟初始化的**循环依赖**：`updateMaskCanvas` 需要 `maskCanvas`，而它只在 `ensureOffscreens` 里建，后者又只在"已启用虚化"分支里调用 → 死锁；异常被 try/catch 吞掉 | `updateMaskCanvas` 自行保证画布存在；`ensureOffscreens` 改为各对象独立创建 |
+| 背景虚化无效果（第二可能） | `selfie_segmenter` 多数版本只输出 `categoryMask`，代码只读 `confidenceMasks` | 两种遮罩格式都兼容，并加「反转遮罩」兜底 |
 
 ### 未解决 / 待改进
 
