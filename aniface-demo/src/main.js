@@ -297,6 +297,7 @@ async function ensureSegmenter() {
           outputConfidenceMasks: true,
           outputCategoryMask: false
         })
+        segInfo.state = '就绪'; segInfo.delegate = delegate
         console.log('[segmenter] 就绪:', src.name, delegate)
         setStatus('背景虚化已就绪 ✅')
         return segmenter
@@ -305,37 +306,48 @@ async function ensureSegmenter() {
       }
     }
   }
+  segInfo.state = '加载失败'
   setStatus('⚠️ 背景虚化不可用（分割模型加载失败）')
   return null
 }
 
 function ensureOffscreens(w, h) {
-  if (!offA) {
-    offA = document.createElement('canvas'); offA._c = offA.getContext('2d')
-    offB = document.createElement('canvas'); offB._c = offB.getContext('2d')
-    offC = document.createElement('canvas'); offC._c = offC.getContext('2d')
-    maskCanvas = document.createElement('canvas')
-    maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true })
-  }
+  if (!offA) { offA = document.createElement('canvas'); offA._c = offA.getContext('2d') }
+  if (!offB) { offB = document.createElement('canvas'); offB._c = offB.getContext('2d') }
+  if (!offC) { offC = document.createElement('canvas'); offC._c = offC.getContext('2d') }
+  if (!maskCanvas) { maskCanvas = document.createElement('canvas'); maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true }) }
   for (const c of [offA, offB, offC]) if (c.width !== w || c.height !== h) { c.width = w; c.height = h }
 }
 
 // 分割结果 -> alpha 遮罩画布（人物=不透明）
+let segInfo = { state: '未加载', delegate: '', personPct: 0, kind: '' }
+
 function updateMaskCanvas(res) {
-  const mask = res && res.confidenceMasks && res.confidenceMasks[0]
-  if (!mask) return false
-  const mw = mask.width, mh = mask.height
-  const arr = mask.getAsFloat32Array()
+  if (!res) return false
+  if (!maskCanvas) { maskCanvas = document.createElement('canvas'); maskCtx = maskCanvas.getContext('2d', { willReadFrequently: true }) }
+  // selfie_segmenter 多数情况只给 categoryMask（0/1），部分版本给 confidenceMasks（0..1）
+  let arr = null, mw = 0, mh = 0, isCat = false
+  if (res.confidenceMasks && res.confidenceMasks.length) {
+    const m = res.confidenceMasks[0]
+    mw = m.width; mh = m.height; arr = m.getAsFloat32Array(); segInfo.kind = 'confidence'
+  } else if (res.categoryMask) {
+    const m = res.categoryMask
+    mw = m.width; mh = m.height; arr = m.getAsUint8Array(); isCat = true; segInfo.kind = 'category'
+  }
+  if (!arr) { segInfo.kind = 'none'; return false }
   if (maskCanvas.width !== mw || maskCanvas.height !== mh) { maskCanvas.width = mw; maskCanvas.height = mh }
   const img = maskCtx.createImageData(mw, mh)
   const invEl = $('blur_invert')
   const inv = invEl ? invEl.checked : false
+  let person = 0
   for (let i = 0; i < mw * mh; i++) {
-    let a = arr[i]
+    let a = isCat ? (arr[i] > 0 ? 1 : 0) : arr[i]
     if (inv) a = 1 - a
+    person += a
     img.data[i * 4] = 255; img.data[i * 4 + 1] = 255; img.data[i * 4 + 2] = 255
     img.data[i * 4 + 3] = Math.max(0, Math.min(1, a)) * 255
   }
+  segInfo.personPct = Math.round(100 * person / (mw * mh))
   maskCtx.putImageData(img, 0, 0)
   return true
 }
@@ -349,9 +361,19 @@ function tickSegmentation(srcEl, ts) {
     const res = segmenter.segmentForVideo(srcEl, ts)
     hasMask = updateMaskCanvas(res)
     if (res && res.close) res.close()
+    if ((segTick % 20) === 0) blurDiag()
   } catch (e) {
     console.warn('[segmenter] segment 失败:', e?.message || e)
   }
+}
+
+function blurDiag() {
+  const el = $('blur_dbg'); if (!el) return
+  const onEl = $('blur_on')
+  el.textContent = '分割=' + segInfo.state + (segInfo.delegate ? '(' + segInfo.delegate + ')' : '')
+    + ' · 遮罩=' + (hasMask ? '有/' + segInfo.kind + '/人物' + segInfo.personPct + '%' : '无')
+    + ' · 虚化=' + ($('blur_px') ? $('blur_px').value : '?') + 'px'
+    + ' · 开关=' + (onEl ? (onEl.checked ? '开' : '关') : '缺')
 }
 
 // 把视频画进合成画布：可选背景虚化（底层模糊 + 上层人物抠图）
@@ -586,6 +608,9 @@ for (const id of Object.values(SP)) on(id, 'input', onSlider)
 // 启动时刷新一次标签
 cpLabels()
 blurLabels()
+
+
+
 
 
 
