@@ -21,3 +21,7 @@ certs/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# ---------- MediaPipe 本地运行时（npm run vendor:mediapipe 生成，约 36MB） ----------
+aniface-demo/public/mediapipe/
+

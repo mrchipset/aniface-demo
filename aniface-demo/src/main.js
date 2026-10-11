@@ -2,8 +2,12 @@ import { Aniface } from 'aniface'
 import * as THREE from 'three'
 import { FaceLandmarker, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision'
 
-const WASM  = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm'
-const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task'
+// MediaPipe 运行时来源：本地优先（npm run vendor:mediapipe 后可用），失败再退回 CDN
+const SOURCES = [
+  { name: '本地', wasm: '/mediapipe/wasm', model: '/mediapipe/face_landmarker.task' },
+  { name: 'CDN',  wasm: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm',
+                  model: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task' },
+]
 
 const canvas   = document.getElementById('avatar')
 const video    = document.getElementById('webcam')
@@ -111,16 +115,27 @@ function detect(lk, el, ts) {
 // ---------------- MediaPipe ----------------
 async function ensureLandmarker() {
   if (landmarker) return landmarker
-  setStatus('初始化 MediaPipe…')
-  const vision = await FilesetResolver.forVisionTasks(WASM)
-  const opts = (delegate) => ({
-    baseOptions: { modelAssetPath: MODEL, delegate },
+  const opts = (src, delegate) => ({
+    baseOptions: { modelAssetPath: src.model, delegate },
     outputFaceBlendshapes: true, outputFacialTransformationMatrixes: true,
     runningMode: 'VIDEO', numFaces: 1
   })
-  try { landmarker = await FaceLandmarker.createFromOptions(vision, opts('GPU')) }
-  catch (e) { console.warn('GPU 失败，回退 CPU', e); landmarker = await FaceLandmarker.createFromOptions(vision, opts('CPU')) }
-  return landmarker
+  let lastErr = null
+  for (const src of SOURCES) {
+    for (const delegate of ['GPU', 'CPU']) {
+      try {
+        setStatus(`初始化 MediaPipe（${src.name} / ${delegate}）…`)
+        const vision = await FilesetResolver.forVisionTasks(src.wasm)
+        landmarker = await FaceLandmarker.createFromOptions(vision, opts(src, delegate))
+        console.log('[mediapipe] 就绪:', src.name, delegate)
+        return landmarker
+      } catch (e) {
+        lastErr = e
+        console.warn(`[mediapipe] ${src.name}/${delegate} 失败:`, e?.message || e)
+      }
+    }
+  }
+  throw new Error('MediaPipe 初始化失败（本地与 CDN 都不可用）: ' + (lastErr?.message || lastErr))
 }
 
 // ---------------- 控制项 ----------------
@@ -241,6 +256,7 @@ $('playSample').addEventListener('click', async () => {
 const comp = document.getElementById('composite')
 const cctx = comp ? comp.getContext('2d') : null
 let lastComp = null      // { srcEl, lms, w, h }：拖动滑块时用来重绘
+let cpTick = 0           // 诊断输出节流
 
 function cpLabels() {
   if (!$('cp_size')) return
@@ -277,13 +293,21 @@ function drawComposite(srcEl, landmarks, srcW, srcH) {
 
   const k  = parseFloat($('cp_size').value)
   const bh = (by1 - by0) * comp.height * k
-  const cx = ((bx0 + bx1) / 2) * comp.width  + parseFloat($('cp_dx').value) * comp.width
+  let cxn = (bx0 + bx1) / 2
+  if (mirror) cxn = 1 - cxn      // 画面镜像时，人脸框 x 必须一起翻转
+  const cx = cxn * comp.width + parseFloat($('cp_dx').value) * comp.width
   const cy = ((by0 + by1) / 2) * comp.height + parseFloat($('cp_dy').value) * comp.height
 
   // ③ 顶层：模型画布（透明背景）；按高度贴合，宽度等比
   const av = canvas
   const ww = bh * (av.width / av.height)
   const dx = cx - ww / 2, dy = cy - bh / 2
+  if ((cpTick++ % 15) === 0 && $('cp_dbg')) {
+    $('cp_dbg').textContent =
+      `脸框[${x0.toFixed(2)},${y0.toFixed(2)}→${x1.toFixed(2)},${y1.toFixed(2)}] `
+      + `大小${k.toFixed(2)} 偏移X${parseFloat($('cp_dx').value).toFixed(2)} 偏移Y${parseFloat($('cp_dy').value).toFixed(2)} `
+      + `| 贴到 (${Math.round(dx)},${Math.round(dy)}) ${Math.round(ww)}x${Math.round(bh)} 画布${comp.width}x${comp.height} 镜像${mirror}`
+  }
   cctx.save()
   cctx.imageSmoothingEnabled = true
   if (mirror) { cctx.translate(dx + ww, dy); cctx.scale(-1, 1); cctx.drawImage(av, 0, 0, ww, bh) }
@@ -349,6 +373,8 @@ for (const id of Object.values(SP)) on(id, 'input', onSlider)
 
 // 启动时刷新一次合成参数标签
 cpLabels()
+
+
 
 
 

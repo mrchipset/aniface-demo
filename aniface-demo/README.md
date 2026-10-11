@@ -3,9 +3,23 @@
 ## 启动
 
     npm install
+    npm run vendor:mediapipe      # 可选但强烈建议：把 MediaPipe 运行时本地化（约 36MB）
     npm run dev
 
 **默认走 HTTPS**（http:// 在非 localhost 下拿不到摄像头 API）。
+
+## 常用脚本
+
+| 命令 | 作用 |
+|---|---|
+| `npm run dev` | 启动开发服务器（默认 HTTPS，端口 5199） |
+| `npm run build` | 构建到 `dist/` |
+| `npm run cert` | 重新生成自签证书（本机 IP 变化后执行） |
+| `npm run vendor:mediapipe` | 把 MediaPipe 的 WASM 与模型复制/下载到 `public/mediapipe/`，启动不再依赖 CDN |
+| `npm run check` | 自检 `main.js` 里所有 `$('id')` 是否都能在 `index.html` 找到（提前发现"引用了已删除元素"这类运行时 TypeError） |
+
+> `public/mediapipe/`（约 36MB）已在 `.gitignore` 中，用 `npm run vendor:mediapipe` 重新生成。
+> 未执行该命令时，代码会自动回退到 CDN。
 
     https://localhost:5199/            # 本机
     https://192.168.71.5:5199/         # 局域网（把 IP 换成你机器实际的）
