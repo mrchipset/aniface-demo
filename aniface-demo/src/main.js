@@ -166,7 +166,7 @@ $('start').addEventListener('click', async () => {
     const loop = () => {
       if (!playing || mode !== 'camera') return
       const r = detect(lk, video, performance.now())
-      if (r?.faceLandmarks?.length) avatar.processLandmarkData(r)
+      if (r?.faceLandmarks?.length) { avatar.processLandmarkData(r); stabilizeModel() }
       fitOverlay(); drawOverlay(r); updateStats(r)
       drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
       lastComp = { srcEl: video, lms: r?.faceLandmarks?.[0], w: video.videoWidth, h: video.videoHeight }
@@ -208,7 +208,7 @@ async function runOnElement(el, isVideo) {
     const loop = () => {
       if (!playing || mode !== 'file' || video.paused || video.ended) { if (mode==='file') setStatus('播放结束'); return }
       const r = detect(lk, video, performance.now())
-      if (r?.faceLandmarks?.length) avatar.processLandmarkData(r)
+      if (r?.faceLandmarks?.length) { avatar.processLandmarkData(r); stabilizeModel() }
       fitOverlay(); drawOverlay(r); updateStats(r)
       drawComposite(video, r?.faceLandmarks?.[0], video.videoWidth, video.videoHeight)
       lastComp = { srcEl: video, lms: r?.faceLandmarks?.[0], w: video.videoWidth, h: video.videoHeight }
@@ -224,7 +224,7 @@ async function runOnElement(el, isVideo) {
     octx.drawImage(el, 0, 0, overlay.width, overlay.height)   // 图片画进摄像头面板
     drawOverlay(r, true); updateStats(r)
     if (r?.faceLandmarks?.length) {
-      avatar.processLandmarkData(r)
+      avatar.processLandmarkData(r); stabilizeModel()
       drawComposite(el, r.faceLandmarks[0], el.naturalWidth || el.width, el.naturalHeight || el.height)
       lastComp = { srcEl: el, lms: r.faceLandmarks[0], w: el.naturalWidth || el.width, h: el.naturalHeight || el.height }
       setStatus('图片已应用 ✅（静态，中性表情）')
@@ -310,7 +310,10 @@ function drawComposite(srcEl, landmarks, srcW, srcH) {
   }
   cctx.save()
   cctx.imageSmoothingEnabled = true
-  if (mirror) { cctx.translate(dx + ww, dy); cctx.scale(-1, 1); cctx.drawImage(av, 0, 0, ww, bh) }
+  // aniface 的 head-only 分支内部已对 Y/Z 做镜像 (y=-y, z=-z)，
+  // 这里必须用与画面相反的翻转策略，否则会出现双重镜像、动作反了
+  const pasteMirror = !mirror
+  if (pasteMirror) { cctx.translate(dx + ww, dy); cctx.scale(-1, 1); cctx.drawImage(av, 0, 0, ww, bh) }
   else cctx.drawImage(av, 0, 0, ww, bh)
   cctx.restore()
 }
@@ -329,6 +332,18 @@ if ($('cp_reset')) $('cp_reset').addEventListener('click', () => {
 })
 
 const T = ['t_scale','t_x','t_y','t_z']
+// 抵消 aniface 写入模型根节点的平移（人脸矩阵的位置分量），
+// 否则模型会在画布里跑偏，出现"只剩半张脸"。旋转保持不变。
+function stabilizeModel() {
+  const inner = avatar?.getRenderer()?.getAvatar()?.getScene()
+  if (!inner || !wrapper) return
+  const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3()
+  inner.matrix.decompose(p, q, s)
+  const g = (id) => parseFloat($(id).value)
+  const ws = g('t_scale')
+  wrapper.position.set(g('t_x') - p.x * ws, g('t_y') - p.y * ws, g('t_z') - p.z * ws)
+}
+
 function applyTransform() {
   if (!wrapper) return
   const g = (id) => parseFloat($(id).value)
@@ -338,7 +353,7 @@ function applyTransform() {
   $('tv_y').textContent = g('t_y').toFixed(2)
   $('tv_z').textContent = g('t_z').toFixed(2)
   wrapper.scale.setScalar(s)
-  wrapper.position.set(g('t_x'), g('t_y'), g('t_z'))
+  stabilizeModel()
   avatar?.getRenderer()?.render()
 }
 for (const id of T) $(id).addEventListener('input', applyTransform)
@@ -373,6 +388,8 @@ for (const id of Object.values(SP)) on(id, 'input', onSlider)
 
 // 启动时刷新一次合成参数标签
 cpLabels()
+
+
 
 
 
