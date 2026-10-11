@@ -326,6 +326,17 @@ for (const id of ['cp_on','cp_size','cp_dx','cp_dy']) {
   e.addEventListener('input',  () => { cpLabels(); compositeRefresh() })
   e.addEventListener('change', () => { cpLabels(); compositeRefresh() })
 }
+if ($('view_reset')) $('view_reset').addEventListener('click', () => {
+  const cam = avatar?.getRenderer()?.getCamera()
+  if (cam) {
+    cam.position.set(0, 0, 1.5)
+    cam.fov = 40
+    cam.updateProjectionMatrix()
+    cam.lookAt(0, 0, 0)
+  }
+  applyTransform(); modelDiag()
+  setStatus('已重置相机视图与模型变换')
+})
 if ($('cp_reset')) $('cp_reset').addEventListener('click', () => {
   $('cp_size').value = 1.8; $('cp_dx').value = 0; $('cp_dy').value = 0
   cpLabels(); compositeRefresh(); setStatus('已重置合成参数')
@@ -348,6 +359,23 @@ function stabilizeModel() {
   wrapper.position.set(g('t_x'), g('t_y'), g('t_z'))
 }
 
+// 模型侧诊断：看清到底是"模型被放大"还是"相机被拉近"
+function modelDiag() {
+  const el = $('mv_dbg'); if (!el) return
+  const rnd = avatar?.getRenderer(); if (!rnd) { el.textContent = '模型未加载'; return }
+  const inner = rnd.getAvatar()?.getScene()
+  const cam = rnd.getCamera()
+  let mScale = '-'
+  if (inner) {
+    const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3()
+    inner.matrix.decompose(p, q, s)
+    mScale = s.x.toFixed(3)
+  }
+  const c = cam ? cam.position : null
+  el.textContent = `wrapper=${wrapper ? '有' : '无(位置滑块无效)'} · 模型内层缩放${mScale} · 设置缩放${parseFloat($('t_scale').value).toFixed(2)}`
+    + (c ? ` · 相机(${c.x.toFixed(2)},${c.y.toFixed(2)},${c.z.toFixed(2)}) fov${cam.fov}` : '')
+}
+
 // 一步到位：更新 morph + 矩阵 -> 清平移 -> 渲染。
 // 必须在 render 之前清平移，否则当前帧仍是被推偏的画面。
 function stepAvatar(r) {
@@ -355,6 +383,7 @@ function stepAvatar(r) {
   if (!rnd) return
   if (r?.faceLandmarks?.length) { rnd.processLandmarks(r); stabilizeModel() }
   rnd.render()
+  if ((cpTick++ % 20) === 0) modelDiag()
 }
 
 function applyTransform() {
@@ -401,6 +430,8 @@ for (const id of Object.values(SP)) on(id, 'input', onSlider)
 
 // 启动时刷新一次合成参数标签
 cpLabels()
+
+
 
 
 
