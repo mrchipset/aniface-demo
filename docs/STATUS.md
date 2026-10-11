@@ -52,6 +52,13 @@
 | 接缝孤立斑点 | 镜像 UV 接缝处权重断续 | 形态学开运算（腐蚀 + 膨胀） |
 | 跨机器摄像头报 `getUserMedia` undefined | 非安全上下文（局域网 IP + http） | 演示工程默认启用 HTTPS + SAN 证书 |
 | 远端 `ERR_SSL_PROTOCOL_ERROR` | 用 https 访问了 HTTP 模式的服务 | 配置改为 `certs/` 存在即默认 HTTPS |
+| 启动报 `Cannot set properties of null` | 改布局后删掉了「贴脸」面板/headYaw 滑块，脚本仍无保护地访问 `$('lf_hint')` / `$('v_yaw')` | 清理失效引用 + 新增 `npm run check` 自检 |
+| 启动有概率卡在「初始化 MediaPipe」 | WASM(11MB)+模型(3.6MB) 每次从 CDN 拉 | `npm run vendor:mediapipe` 本地化 + 本地优先/CDN 兜底 + GPU/CPU 逐一尝试 |
+| 合成视图里小熊猫固定在左上角、偏移滑块无效 | 贴模型的分支 `else` 漏了 `translate(dx,dy)`，永远画在 (0,0) | 两条分支都 translate |
+| 模型动作与人脸相反（镜像） | aniface head-only 内部已镜像 Y/Z，合成时又翻一次 → 双重镜像 | `pasteMirror = !viewMirror` |
+| 模型被裁成半张脸 | aniface 把人脸矩阵的**平移分量**写进模型根节点 | 每帧清零 `matrix.elements[12..14]`（须在 render 前） |
+| Scale 必须调到 0.1 才看见，只见一张大嘴 | aniface head-only 把矩阵**放大 40 倍** | 读内层实际缩放并抵消：`wrapper.scale = 用户Scale / innerScale` |
+| 偏移过的模型被推到相机跟前变全黑 | 用 `wrapper.position - p*scale` 抵消平移，量级不一致 | 改为直接清零矩阵平移（尺度无关） |
 
 ### 未解决 / 待改进
 
@@ -68,7 +75,7 @@
 
 | 文件 | 说明 |
 |---|---|
-| `aniface-demo/` | 可运行演示：摄像头 / 文件 / 手动滑块三种驱动 + 位置缩放控制 + HTTPS |
+| `aniface-demo/` | 可运行演示：**三栏布局**（摄像头原始画面+关键点叠加 / **合成视图**（小熊猫贴进画面）/ 控制面板）；摄像头·文件·手动滑块三种驱动；合成参数与模型变换分离；HTTPS；MediaPipe 本地化；`npm run check` 自检 |
 | `aniface-demo/public/redpanda_head.glb` | 小熊猫头像，52 ARKit 表情，0.84 MB |
 | `aniface_head.glb` | 人类头像，51 ARKit 表情，20 MB |
 | `pipeline.py` | 人类头像一键重建 |

@@ -54,6 +54,43 @@
 15. `modelOptions.autoRotate` 默认 `true` 且 `rotation = Math.PI`，会把模型转 180 度 -> 必须显式 `autoRotate: false, rotation: 0`。
 16. 贴图采样用**当前 active_render 的 UV 层**；切到投影 UV 后要记得切回 `UVMap`，否则贴图全乱。
 
+### aniface 运行时（demo 开发中实测）
+
+22. **head-only 分支会把矩阵放大 40 倍**：`AvatarRenderer.processLandmarks` 里
+    `const scale = avatar.isFullBodyAvatar() ? 1 : 40`，`Avatar.applyMatrix` 会把这个 40
+    乘进矩阵 3x3 -> 模型实际大 40 倍。**必须抵消**：
+    `decompose` 内层矩阵读实际缩放 `s`，再设 `wrapper.scale = 用户Scale / s`。
+    否则用户要先把 Scale 调到 ~0.025 才看得见，表现为「只能看到一张大嘴」。
+23. **head-only 分支内部已经镜像过 Y/Z**（源码里写着 `const y = -this._tempEuler.y`）。
+    做画面合成时若再翻一次，会**双重镜像**、动作反了。
+    正确规则：`pasteMirror = !viewMirror`。
+24. **head-only 分支会把人脸矩阵的平移分量写进模型根节点**
+    （`matrix.decompose(position,...)` -> `compose`），模型会在画布内跑偏。
+    修法是**直接清零 `matrix.elements[12..14]`**（尺度无关）；
+    ⚠️ 不要用 `wrapper.position - p * scale` 去抵消 —— 人脸矩阵平移的量级与模型空间不一致，
+    会把模型推到相机跟前（表现为全黑）。
+25. **清零平移必须在 `render()` 之前**。`Aniface.processLandmarkData()` 内部已经渲染过一次，
+    所以要用公开方法自己编排：`renderer.processLandmarks(r)` -> 清平移 -> `renderer.render()`。
+26. **不要把 `OrbitControls` 的滚轮缩放留给用户当默认**（很容易误触把人贴到模型脸上）。
+    给一个「重置视图」按钮，把相机拉回默认 `position/fov/lookAt`。
+
+### 前端 canvas 合成
+
+27. **2D 绘制的每个分支都必须自己 `translate`**：写
+    `if (A) { ctx.translate(dx,dy); draw() } else { draw() }` 会让 else 分支永远画在 (0,0)。
+    本项目的「合成偏移滑块无效 + 模型固定在左上角」就是这条引起的。**分支要对称**。
+28. 合成画布的尺寸要按**源的固有尺寸**设置（`video.videoWidth/Height`、`img.naturalWidth`），
+    再用 CSS 缩放显示；否则人脸框坐标（归一化）换算会错。
+29. **删掉/改名 HTML 元素后，脚本里的 `$('id')` 会变 null** 并抛
+    `Cannot set properties of null`。改完布局务必跑 `npm run check`（见 aniface-demo）。
+
+### 调试方法（本次最有效的两条）
+
+30. **把关键中间值直接显示在页面上**（如 `模型内层缩放 / 相机位置 / 贴图矩形 / 滑块值`），
+    比"用户描述 -> 我猜 -> 改代码 -> 再问"快得多。不知道哪一环出问题时，先加可见数值。
+31. 别在"我以为"的基础上连做两次修复（本项目「镜像坐标」那次是错的，
+    真因是 else 分支漏 translate）。**先确认现象是"没生效"还是"方向反了"**，两者修法相反。
+
 ### 贴图 / 投影
 
 17. **不要把带表情的照片平面投影到模型上**：会把舌头、张口、光照**烤进中性表情**，且球面投影会把眼周拉变形。做中性基座请用**贴图配色重映射**。
