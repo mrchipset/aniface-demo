@@ -20,3 +20,13 @@
 - 两份 redpanda_head.glb 内容相同（根目录为源，aniface-demo/public 为演示用副本）
 - `aniface_head.glb`: 人类头像，51 个 ARKit 表情（缺 tongueOut）
 - 贴图为当前生效的 final_f 配色版本
+
+## Blender 源工程
+
+| 文件 | 字节 | SHA256 |
+|---|---|---|
+| `redpanda_source.blend` | 9191340 | `601953B545F0E30F4FC60B32703C9CB05397389016D9C36FC5E3338BE7F4CC8C` |
+
+- 2026-10-12 由 `Untitled.blend` 另存改名而来（原名已删除）
+- 内容：小熊猫 4 个部件（`head_geo.002` 5304 顶点 / 53 个 shape key、`ears_geo`、`hair_geo`、`tufts_geo`）+ 材质与贴图引用
+- 注意：该文件是**实验累积场景**，除小熊猫外还包含人类头像（`AnifaceHead`）、RPM 全身像部件、金属 `Cube`、`Icosphere` 等历史对象

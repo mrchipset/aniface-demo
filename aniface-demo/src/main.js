@@ -793,3 +793,35 @@ blurLabels()
 
 
 
+
+// ---------------- 滚轮调节滑块 ----------------
+// 悬停在 range 上滚动即可改值；步长默认取范围的 1%（避免 step 太小滚不动）
+// Shift = 10 倍（粗调）  Alt = 1/10（微调）
+document.addEventListener('wheel', (e) => {
+  const el = e.target
+  if (!el || el.tagName !== 'INPUT' || el.type !== 'range' || el.disabled) return
+  const min = parseFloat(el.min), max = parseFloat(el.max)
+  const step = parseFloat(el.step) || 1
+  if (!isFinite(min) || !isFinite(max)) return
+  let inc = Math.max(step, (max - min) / 100)
+  if (e.shiftKey) inc *= 10
+  else if (e.altKey) inc /= 10
+  const dir = e.deltaY < 0 ? 1 : -1
+  let v = parseFloat(el.value) + dir * inc
+  v = Math.min(max, Math.max(min, v))
+  // 对齐到 step 网格，避免出现 0.30000000000000004 之类的值
+  v = Math.round(v / step) * step
+  const decimals = (String(step).split('.')[1] || '').length
+  v = parseFloat(v.toFixed(Math.min(decimals, 6)))
+  if (v === parseFloat(el.value)) return
+  e.preventDefault()                       // 阻止页面跟着滚
+  el.value = v
+  el.dispatchEvent(new Event('input', { bubbles: true }))
+}, { passive: false })
+
+// 给所有滑块加提示
+document.querySelectorAll('input[type=range]').forEach((el) => {
+  el.title = '滚轮可调 · Shift 粗调 · Alt 微调'
+  el.style.cursor = 'ns-resize'
+})
+
