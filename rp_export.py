@@ -1,5 +1,5 @@
 import bpy, os
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 PARTS = ["head_geo.002","ears_geo","hair_geo","tufts_geo","raccoon_head"]
 bpy.ops.object.select_all(action='DESELECT')
 for n in PARTS:

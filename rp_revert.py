@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 base = bpy.data.images["RedPandaBase3"]; ear = bpy.data.images["RedPandaEar3"]
 for m in bpy.data.materials:
     if not m.use_nodes: continue

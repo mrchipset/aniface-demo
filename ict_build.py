@@ -1,8 +1,8 @@
 import bpy, os, json, numpy as np, mathutils, math
 
-FOLDER = r"<HOME>\tmp\blender\ICT-FaceKit\FaceXModel"
-PHOTO  = r"<HOME>\Downloads\photo.jpg"
-OUT    = r"<HOME>\tmp\blender"
+FOLDER = r"ICT-FaceKit\FaceXModel"
+PHOTO  = os.environ.get("PHOTO", "photo.jpg")
+OUT    = r"."
 
 cfg = json.load(open(os.path.join(FOLDER,"vertex_indices.json")))
 exprs = cfg["expressions"]

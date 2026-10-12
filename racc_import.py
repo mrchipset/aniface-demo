@@ -1,5 +1,5 @@
 import bpy, os
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 # remove previous raccoon parts
 for o in list(bpy.data.objects):
     if o.name.startswith(("head_geo","ears_geo","hair_geo","tufts_geo","raccoon_head")):

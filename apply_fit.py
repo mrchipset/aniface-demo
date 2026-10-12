@@ -1,9 +1,9 @@
 import bpy, numpy as np, json, mathutils, math
 
-fit = json.load(open(r"<HOME>\tmp\blender\ict_fit.json"))
+fit = json.load(open(r"ict_fit.json"))
 c = np.array(fit["identity_coefficients"], dtype=np.float64)
-neutral = np.load(r"<HOME>\tmp\blender\ict_neutral.npy")
-ids = np.load(r"<HOME>\tmp\blender\ict_ids.npy")
+neutral = np.load(r"ict_neutral.npy")
+ids = np.load(r"ict_ids.npy")
 D = ids - neutral[None,:,:]
 print("coeffs: K=%s |c|=%.2f" % (fit["K"], np.linalg.norm(c[:fit["K"]])))
 

@@ -15,7 +15,7 @@ top_z = max(zs)
 print("mesh chin:", [round(v,4) for v in chin], "| eye_z:", round(eye_z,4), "| top_z:", round(top_z,4))
 
 # photo
-img = bpy.data.images[os.path.basename(r"<HOME>\Downloads\photo.jpg")]
+img = bpy.data.images[os.path.basename(os.environ.get("PHOTO", "photo.jpg"))]
 W,H = img.size; px=list(img.pixels)
 def get(x,y):
     i=(y*W+x)*4; return px[i],px[i+1],px[i+2]
@@ -72,6 +72,6 @@ cam.data.lens = 55
 sc.render.resolution_x=480; sc.render.resolution_y=600
 sc.render.image_settings.file_format="PNG"; sc.render.image_settings.color_mode="RGB"
 cam.location=(0,-0.85,0.01); cam.rotation_euler=(math.radians(90),0,0)
-sc.render.filepath = r"<HOME>\tmp\blender\ict_align.png"
+sc.render.filepath = r"ict_align.png"
 bpy.ops.render.render(write_still=True)
-print("ok", os.path.getsize(r"<HOME>\tmp\blender\ict_align.png"))
+print("ok", os.path.getsize(r"ict_align.png"))

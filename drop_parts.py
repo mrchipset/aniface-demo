@@ -1,5 +1,5 @@
 import bpy, os
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 ob = bpy.data.objects["AnifaceHead"]; me = ob.data
 print("before verts=%d polys=%d" % (len(me.vertices), len(me.polygons)))
 DROP=("M_GumsTongue","M_Teeth","M_ScleraLeft","M_IrisLeft","M_ScleraRight","M_IrisRight",

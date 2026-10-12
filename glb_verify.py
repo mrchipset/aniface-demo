@@ -1,5 +1,5 @@
 import json, struct, os, sys
-p = sys.argv[1] if len(sys.argv) > 1 else r"<HOME>\tmp\blender\redpanda_head.glb"
+p = sys.argv[1] if len(sys.argv) > 1 else r"redpanda_head.glb"
 d=open(p,'rb').read(); off=12; js=None
 while off<len(d):
     cl,ct=struct.unpack("<II",d[off:off+8])

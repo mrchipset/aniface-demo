@@ -1,5 +1,5 @@
 import bpy, os, numpy as np
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 W=H=512
 pos = np.load(os.path.join(OUT,"head_uvpos.npy"))
 mask = np.load(os.path.join(OUT,"head_uvmask.npy"))

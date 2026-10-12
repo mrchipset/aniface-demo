@@ -26,6 +26,10 @@ desktop.ini
 *.blend1
 *.blend2
 
+# ---------- Python 缓存 ----------
+__pycache__/
+*.pyc
+
 # ---------- MediaPipe 本地运行时（npm run vendor:mediapipe 生成，约 36MB） ----------
 aniface-demo/public/mediapipe/
 

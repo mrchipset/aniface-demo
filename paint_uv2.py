@@ -1,5 +1,5 @@
 import bpy, os, numpy as np, math
-OUT=r"<HOME>\tmp\blender"; W=H=512
+OUT=r"."; W=H=512
 me = bpy.data.objects["head_geo.002"].data
 base = bpy.data.images["RedPandaBase3"]
 

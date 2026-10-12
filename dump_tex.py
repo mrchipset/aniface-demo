@@ -1,5 +1,5 @@
 import bpy, os
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 for im in bpy.data.images:
     if im.size[0]==0: continue
     print("image:", im.name, im.size[:], im.colorspace_settings.name)

@@ -34,6 +34,6 @@ def render_to(path, loc, rot):
     return os.path.exists(path)
 
 D = 0.9
-r1 = render_to(r"<HOME>\tmp\blender\ict_f.png", (0.0,-D,0.02), (math.radians(90),0,0))
-r2 = render_to(r"<HOME>\tmp\blender\ict_s.png", (D,0.0,0.02), (math.radians(90),0,math.radians(90)))
+r1 = render_to(r"ict_f.png", (0.0,-D,0.02), (math.radians(90),0,0))
+r2 = render_to(r"ict_s.png", (D,0.0,0.02), (math.radians(90),0,math.radians(90)))
 print("rendered front:", r1, " side:", r2)

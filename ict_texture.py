@@ -1,6 +1,6 @@
 import bpy, math, mathutils, os
 
-PHOTO = r"<HOME>\Downloads\photo.jpg"
+PHOTO = os.environ.get("PHOTO", "photo.jpg")
 obj = bpy.data.objects["ICTFaceModel"]
 
 # ---- isolate ----
@@ -134,7 +134,7 @@ cam.data.lens = 70
 cam.location = (0.0, -0.75, 0.01)
 cam.rotation_euler = (math.radians(90), 0.0, 0.0)
 sc = bpy.context.scene; sc.camera = cam
-out = r"<HOME>\tmp\blender\ict_pass1.png"
+out = r"ict_pass1.png"
 sc.render.filepath = out
 sc.render.resolution_x = 560; sc.render.resolution_y = 700
 sc.render.image_settings.file_format="PNG"; sc.render.image_settings.color_mode="RGB"

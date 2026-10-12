@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 for name in ("head_geo.002","ears_geo","hair_geo","tufts_geo"):
     ob = bpy.data.objects.get(name)
     if not ob: continue

@@ -15,7 +15,7 @@ eye_xL = min(p.x for p in eyes); eye_xR = max(p.x for p in eyes)
 top_z = max(zs)
 print("mesh: chin z=%.4f | eye_z=%.4f | top_z=%.4f | eye x range %.4f..%.4f" % (chin.z, eye_z, top_z, eye_xL, eye_xR))
 
-PHOTO = r"<HOME>\Downloads\photo.jpg"
+PHOTO = os.environ.get("PHOTO", "photo.jpg")
 img = bpy.data.images[os.path.basename(PHOTO)]
 W,H = img.size; px=list(img.pixels)
 def get(x,y):
@@ -60,5 +60,5 @@ sc.render.image_settings.file_format="PNG"; sc.render.image_settings.color_mode=
 def shot(path, loc, rot):
     cam.location=loc; cam.rotation_euler=rot; sc.render.filepath=path
     bpy.ops.render.render(write_still=True); return os.path.getsize(path)
-print("front:", shot(r"<HOME>\tmp\blender\ict_align.png",(0,-0.85,0.01),(math.radians(90),0,0)))
-print("3/4  :", shot(r"<HOME>\tmp\blender\ict_align34.png",(0.5,-0.7,0.05),(math.radians(80),0,math.radians(35))))
+print("front:", shot(r"ict_align.png",(0,-0.85,0.01),(math.radians(90),0,0)))
+print("3/4  :", shot(r"ict_align34.png",(0.5,-0.7,0.05),(math.radians(80),0,math.radians(35))))

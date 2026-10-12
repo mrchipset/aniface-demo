@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 sc=bpy.context.scene
 w = bpy.data.worlds.get("PolyHaven studio_kontrast_03")
 if w: sc.world = w

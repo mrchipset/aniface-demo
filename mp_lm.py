@@ -1,7 +1,7 @@
 import mediapipe as mp, numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-PHOTO = r"<HOME>\Downloads\photo.jpg"
+PHOTO = os.environ.get("PHOTO", "photo.jpg")
 img = Image.open(PHOTO).convert("RGB")
 W,H = img.size
 arr = np.array(img)

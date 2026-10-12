@@ -1,5 +1,5 @@
 import bpy, os
-OUT = r"<HOME>\tmp\blender"
+OUT = r"."
 ob = bpy.data.objects["ICTFaceModel"]
 ob.name = "AnifaceHead"
 me = ob.data

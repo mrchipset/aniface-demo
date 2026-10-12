@@ -1,6 +1,6 @@
 import bpy, os, json, sys, time
 
-FOLDER = r"<HOME>\tmp\blender\ICT-FaceKit\FaceXModel"
+FOLDER = r"ICT-FaceKit\FaceXModel"
 t0 = time.time()
 
 with open(os.path.join(FOLDER, "vertex_indices.json")) as f:

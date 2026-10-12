@@ -1,5 +1,5 @@
 import bpy, os, numpy as np, math
-OUT=r"<HOME>\tmp\blender"; W=H=512
+OUT=r"."; W=H=512
 me = bpy.data.objects["head_geo.002"].data
 d = np.load(os.path.join(OUT,"head_uvmap.npz"))
 pos, mask, nrm = d["pos"], d["mask"], d["nrm"]

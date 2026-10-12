@@ -1,5 +1,5 @@
 import bpy, os, numpy as np
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 src = bpy.data.images["Image_0"]
 W,H = src.size
 px = np.array(src.pixels[:], dtype=np.float32).reshape(H, W, 4)

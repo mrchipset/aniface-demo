@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 me = bpy.data.objects["ICTFaceModel"].data
 idx={m.name:i for i,m in enumerate(me.materials) if m}
 ip=idx["PhotoFace"]; isk=idx["SkinTone"]; ih=idx["HairTone"]

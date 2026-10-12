@@ -37,5 +37,5 @@ sc.render.image_settings.file_format="PNG"; sc.render.image_settings.color_mode=
 def shot(path, loc, rot):
     cam.location=loc; cam.rotation_euler=rot; sc.render.filepath=path
     bpy.ops.render.render(write_still=True); return os.path.getsize(path)
-print("front:", shot(r"<HOME>\tmp\blender\ict_align.png",(0,-0.85,0.01),(math.radians(90),0,0)))
-print("3/4  :", shot(r"<HOME>\tmp\blender\ict_align34.png",(0.55,-0.65,0.05),(math.radians(82),0,math.radians(40))))
+print("front:", shot(r"ict_align.png",(0,-0.85,0.01),(math.radians(90),0,0)))
+print("3/4  :", shot(r"ict_align34.png",(0.55,-0.65,0.05),(math.radians(82),0,math.radians(40))))

@@ -1,5 +1,5 @@
 import json, struct
-p=r"<HOME>\tmp\blender\redpanda_head.glb"
+p=r"redpanda_head.glb"
 d=open(p,'rb').read(); off=12; js=None
 while off<len(d):
     cl,ct=struct.unpack("<II",d[off:off+8])

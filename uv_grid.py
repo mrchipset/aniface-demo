@@ -1,5 +1,5 @@
 import bpy, os, numpy as np
-OUT=r"<HOME>\tmp\blender"; W=H=512
+OUT=r"."; W=H=512
 yy, xx = np.mgrid[0:H, 0:W]
 cell = 32
 cx = xx // cell; cy = yy // cell

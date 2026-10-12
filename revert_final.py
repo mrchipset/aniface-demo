@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 base = bpy.data.images["RedPandaBase3"]      # final_f.png 用的主体贴图
 ear  = bpy.data.images["RedPandaEar3"]       # 白边橘心耳
 

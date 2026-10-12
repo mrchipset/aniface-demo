@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 ob=bpy.data.objects["AnifaceHead"]
 sc=bpy.context.scene; cam=sc.camera; cam.data.lens=55
 sc.render.resolution_x=520; sc.render.resolution_y=640

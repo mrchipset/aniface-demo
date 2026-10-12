@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 ob = bpy.data.objects.get("ICTFaceModel")
 print("object:", ob)
 if ob is None:

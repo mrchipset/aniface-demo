@@ -1,5 +1,5 @@
 import bpy, os, numpy as np
-OUT=r"<HOME>\tmp\blender"; W=H=512
+OUT=r"."; W=H=512
 pos = np.load(os.path.join(OUT,"head_uvpos.npy"))
 mask = np.load(os.path.join(OUT,"head_uvmask.npy"))
 src = bpy.data.images["Image_0"]

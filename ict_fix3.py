@@ -52,5 +52,5 @@ def shot(path, loc, rot):
     bpy.ops.render.render(write_still=True)
     return os.path.getsize(path) if os.path.exists(path) else 0
 D = 0.85
-print("front(-Y):", shot(r"<HOME>\tmp\blender\ict_f.png", (0,-D,0.01), (math.radians(90),0,0)))
-print("back(+Y) :", shot(r"<HOME>\tmp\blender\ict_b.png", (0, D,0.01), (math.radians(90),0,math.radians(180))))
+print("front(-Y):", shot(r"ict_f.png", (0,-D,0.01), (math.radians(90),0,0)))
+print("back(+Y) :", shot(r"ict_b.png", (0, D,0.01), (math.radians(90),0,math.radians(180))))

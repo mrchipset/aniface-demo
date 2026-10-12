@@ -1,6 +1,6 @@
 import bpy, os, math, numpy as np
-OUT = r"<HOME>\tmp\blender"
-PHOTO = r"<HOME>\Downloads\photo.jpg"
+OUT = r"."
+PHOTO = os.environ.get("PHOTO", "photo.jpg")
 me = bpy.data.objects["ICTFaceModel"].data
 img = bpy.data.images[os.path.basename(PHOTO)]
 W,H = img.size; px=list(img.pixels)

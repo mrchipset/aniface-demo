@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 # --- ears/hair/tufts -> white-edged texture ---
 ear = bpy.data.images.get("RedPandaEar")
 n=0

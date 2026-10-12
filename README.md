@@ -15,7 +15,6 @@
 │   ├── src/main.js            三种驱动模式：摄像头 / 文件 / 手动滑块；含位置·缩放控制
 │   ├── public/
 │   │   ├── redpanda_head.glb  ★ 小熊猫头像（52 个 ARKit 表情）
-│   │   ├── aniface_head.glb   人类头像（51 个 ARKit 表情）
 │   │   └── sample.jpg
 │   ├── certs/                 自签 HTTPS 证书（已 gitignore，用 npm run cert 生成）
 │   └── README.md              启动 / 跨机器访问 / 排错
@@ -29,7 +28,6 @@
 ├── redpanda_source.blend      ★ 小熊猫 Blender 源工程（8.8 MB，含 53 个 shape key）
 ├── raccoon_head_small.glb     基座模型（aniface 官方 demo 素材，MIT）
 ├── rpm_avatar.glb             Ready Player Me 全身像（来源确证，作参考）
-├── aniface_head.glb           人类头像（20 MB，含 51 个 ARKit 表情）
 │
 ├── redpanda_base3.png         小熊猫主体贴图（重映射生成）
 ├── redpanda_ear3.png          耳朵贴图（白边橘心）

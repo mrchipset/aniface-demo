@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 fix = bpy.data.images.get("Image_1.001") or bpy.data.images.get("Image_1")
 m = bpy.data.materials["MAT_Racoon.004"]
 for nd in m.node_tree.nodes:

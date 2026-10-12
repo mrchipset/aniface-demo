@@ -1,5 +1,5 @@
 import bpy, os, math, numpy as np
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 
 # ---------- 1. 收紧脸部投影 ----------
 ob = bpy.data.objects["head_geo.002"]; me = ob.data

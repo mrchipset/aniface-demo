@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 ob=bpy.data.objects["ICTFaceModel"]; me=ob.data
 
 # recalc normals outward (edit mode)

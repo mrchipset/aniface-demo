@@ -9,6 +9,7 @@
 | `redpanda_head.glb` | 881812 | `D3E3B7097169B169C8CF4F28DC11F6315AC91F7008AB016A718C2D1983D320EE` |
 | `aniface-demo/public/redpanda_head.glb` | 881812 | `D3E3B7097169B169C8CF4F28DC11F6315AC91F7008AB016A718C2D1983D320EE` |
 | `aniface_head.glb` | 21199364 | `143806A4786FCEFF68879895F0FC9B215B13850DF2C26175E04D8222EE5934E1` |
+| ~~`aniface_head.glb`~~ | — | **已于 2026-10-12 从仓库历史移除**（内嵌本人照片，隐私处理） |
 | `raccoon_head_small.glb` | 631220 | `D5BF89AD8D3BC5DBAB936CC08E267851129DA24F200F598488848F94FEB8754D` |
 | `rpm_avatar.glb` | 2621520 | `15CCB2ADA1EDE2529ADA0DF630A528EB98BB23C997DFAA5BC0637D15AF0A5104` |
 | `redpanda_base3.png` | 82888 | `FA9199D7229A59FDEFA15B69498F16CFC362285349D476566337865D87A8C886` |
@@ -18,7 +19,7 @@
 
 - `redpanda_head.glb`: 小熊猫头像，52 个 ARKit 表情，head-only，meshopt 压缩
 - 两份 redpanda_head.glb 内容相同（根目录为源，aniface-demo/public 为演示用副本）
-- `aniface_head.glb`: 人类头像，51 个 ARKit 表情（缺 tongueOut）
+- ~~`aniface_head.glb`~~：人类头像（51 个 ARKit 表情），**已从历史移除** —— 它把一张真人照片内嵌为贴图
 - 贴图为当前生效的 final_f 配色版本
 
 ## Blender 源工程

@@ -1,5 +1,5 @@
 import bpy, os, numpy as np
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 
 # ---------- 1. 撤掉照片投影：所有 head 面回到 MAT_Racoon.004 ----------
 ob = bpy.data.objects["head_geo.002"]; me = ob.data

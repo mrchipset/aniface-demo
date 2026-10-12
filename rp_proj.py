@@ -1,5 +1,5 @@
 import bpy, os, math, numpy as np
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 ob = bpy.data.objects["head_geo.002"]
 me = ob.data
 mw = ob.matrix_world.copy()

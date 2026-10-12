@@ -1,5 +1,5 @@
 import bpy, os
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 # drop the unused FaceUV layer
 me = bpy.data.objects["head_geo.002"].data
 if me.uv_layers.get("FaceUV"):

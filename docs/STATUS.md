@@ -24,7 +24,8 @@
 8. shape key 重命名：`_L`→`Left`、`_R`→`Right`；合并 `browInnerUp` / `cheekPuff` → 51 个精确 ARKit 名（缺 `tongueOut`）
 9. 瘦身导出：删眼球/牙齿/牙龈/睫毛（26,719 → 14,062 顶点）+ 关 morph 法线 + meshopt → 97.7 MB → 20.2 MB
 
-产物：`aniface_head.glb`（20 MB，51 表情）、`pipeline.py`、`fit3.py`、`mp_lm.py`、`ict_fit.json`
+产物：`pipeline.py`、`fit3.py`、`mp_lm.py`、`ict_fit.json`
+（`aniface_head.glb` 曾作为产物，但因为它把本人照片烤进了贴图，**已从仓库历史中移除**；可用 `pipeline.py` 重建）
 
 ### 流水线 B：小熊猫（基于 raccoon 基座）
 
@@ -79,7 +80,7 @@
 |---|---|
 | `aniface-demo/` | 可运行演示：**三栏布局**（摄像头原始画面+关键点叠加 / **合成视图**（小熊猫贴进画面）/ 控制面板）；摄像头·文件·手动滑块三种驱动；合成参数与模型变换分离；HTTPS；MediaPipe 本地化；`npm run check` 自检 |
 | `aniface-demo/public/redpanda_head.glb` | 小熊猫头像，52 ARKit 表情，0.84 MB |
-| `aniface_head.glb` | 人类头像，51 ARKit 表情，20 MB |
+| ~~`aniface_head.glb`~~ | 已移除 —— 内嵌本人照片，为隐私计从历史中删除；`pipeline.py` + 一张正面照可重建 |
 | `pipeline.py` | 人类头像一键重建 |
 | `fit3.py` + `mp_lm.py` | MediaPipe 关键点 → ICT 身份系数拟合 |
 | `rp_*.py` / `paint_uv*.py` | 小熊猫制作与贴图绘制脚本 |

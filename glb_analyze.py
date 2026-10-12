@@ -1,6 +1,6 @@
 import json, struct, os
 from collections import defaultdict
-p = r"<HOME>\tmp\blender\aniface_head.glb"
+p = r"aniface_head.glb"
 data = open(p,'rb').read()
 magic, ver, length = struct.unpack("<III", data[:12])
 off=12; js=None

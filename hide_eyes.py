@@ -1,5 +1,5 @@
 import bpy, os, math
-OUT=r"<HOME>\tmp\blender"
+OUT=r"."
 me = bpy.data.objects["ICTFaceModel"].data
 HIDE = ("M_ScleraLeft","M_IrisLeft","M_ScleraRight","M_IrisRight",
         "M_LacrimalFluid","M_EyeBlend","M_EyeOcclusion","M_EyeLashes")

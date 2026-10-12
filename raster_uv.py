@@ -1,5 +1,5 @@
 import bpy, os, numpy as np
-OUT=r"<HOME>\tmp\blender"; W=H=512
+OUT=r"."; W=H=512
 ob = bpy.data.objects["head_geo.002"]; me = ob.data
 mw = ob.matrix_world.copy()
 uvl = me.uv_layers["UVMap"].data
