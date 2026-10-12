@@ -2,51 +2,69 @@
 <html lang="zh">
 <head>
 <meta charset="utf-8" />
-<title>Aniface · 小熊猫合成到摄像头画面</title>
+<title>Aniface · 小熊猫合成</title>
 <style>
   * { box-sizing: border-box; }
   body { margin:0; background:#161920; color:#cfd4dc; font-family:system-ui,"Segoe UI",sans-serif; font-size:13px; }
-  header { padding:10px 16px; border-bottom:1px solid #2b303a; display:flex; gap:14px; align-items:center; position:sticky; top:0; background:#161920; z-index:5; }
-  h1 { font-size:15px; margin:0; font-weight:600; }
-  #status { color:#8ea0c0; white-space:pre-wrap; }
-  main { display:flex; gap:14px; padding:14px; align-items:flex-start; }
+  header { padding:9px 16px; border-bottom:1px solid #2b303a; display:flex; gap:14px; align-items:center;
+           position:sticky; top:0; background:#161920; z-index:5; }
+  h1 { font-size:15px; margin:0; font-weight:600; white-space:nowrap; }
+  #status { color:#8ea0c0; white-space:pre-wrap; font-size:12px; }
+
+  main { display:flex; gap:12px; padding:12px; align-items:flex-start; flex-wrap:wrap; }
   .card { background:#22262e; border:1px solid #2f343d; border-radius:10px; padding:10px 12px; }
   .card h2 { font-size:12px; margin:0 0 8px; color:#9fb0cc; font-weight:600; letter-spacing:.4px; }
 
-  #camcard { flex: 0 0 400px; }
+  /* 三个视图列 */
+  #camcard { flex: 0 0 340px; }
+  #compcard { flex: 1 1 420px; min-width:340px; }
+  #outcard  { flex: 0 0 300px; }
+  /* 右侧控制栏 */
+  aside { flex: 1 1 320px; max-width:370px; display:flex; flex-direction:column; gap:10px; }
+
   .videowrap { position:relative; width:100%; border-radius:8px; overflow:hidden; background:#0d1015; }
   .videowrap.mirror { transform: scaleX(-1); }
   .videowrap video, .videowrap canvas#overlay { display:block; width:100%; height:auto; }
   .videowrap canvas#overlay { position:absolute; left:0; top:0; }
-  #frame { width:100%; border-radius:8px; background:#0d1015; display:block; }
 
-  .stats { display:grid; grid-template-columns:auto 1fr auto 1fr; gap:3px 10px; margin:9px 0 6px; font-size:11.5px; color:#8ea0c0; }
-  .stats b { color:#cfd4dc; font-weight:600; font-variant-numeric:tabular-nums; }
+  canvas#composite { background:#0d1015; border-radius:8px; display:block; width:100%; height:auto; }
+  canvas#output { border-radius:8px; display:block; max-width:100%; height:auto;
+                  background-image:linear-gradient(45deg,#1b1f26 25%,transparent 25%,transparent 75%,#1b1f26 75%),
+                                   linear-gradient(45deg,#1b1f26 25%,transparent 25%,transparent 75%,#1b1f26 75%);
+                  background-size:16px 16px; background-position:0 0,8px 8px; }
+  canvas#avatar { background:transparent; display:block; margin:0 auto; }
+
+  .stats { display:grid; grid-template-columns:auto 1fr auto 1fr; gap:2px 8px; margin:8px 0 4px;
+           font-size:11px; color:#8ea0c0; }
+  .stats b { color:#cfd4dc; font-weight:600; font-variant-numeric:tabular-nums; overflow:hidden;
+             text-overflow:ellipsis; white-space:nowrap; }
   .ok { color:#4ade80; font-weight:600; }
   .no { color:#f87171; font-weight:600; }
 
-  #compcard { flex: 0 0 auto; }
-  canvas#composite { background:#0d1015; border-radius:8px; display:block; max-width:640px; width:640px; height:auto; }
-  canvas#avatar { background:transparent; border-radius:8px; width:300px; height:300px; display:block; }
-
-  aside { display:flex; flex-direction:column; gap:10px; width:330px; }
-  button { padding:7px 12px; border-radius:8px; border:0; background:#4f7cff; color:#fff; cursor:pointer; font-size:13px; }
+  button { padding:5px 10px; border-radius:7px; border:0; background:#4f7cff; color:#fff;
+           cursor:pointer; font-size:12px; white-space:nowrap; }
   button.ghost { background:#3a4150; }
   button:disabled { background:#39404d; cursor:default; }
-  input[type=file] { color:#9fb0cc; font-size:12px; width:100%; }
-  .row { display:flex; justify-content:space-between; align-items:center; gap:8px; margin:5px 0; }
-  .row label { flex:0 0 84px; color:#9fb0cc; }
-  .row input[type=range] { flex:1; }
-  .row .val { flex:0 0 46px; text-align:right; color:#7f8899; font-variant-numeric:tabular-nums; }
-  .chk { display:flex; align-items:center; gap:5px; color:#9fb0cc; font-size:12px; }
-  #diag { font-size:11px; color:#7f8899; margin:2px 0 6px; word-break:break-all; }
-  code { font-size:11px; color:#7f8899; }
-  .modelbox { display:flex; justify-content:center; }
+  input[type=file] { color:#9fb0cc; font-size:11px; width:100%; }
+
+  .row { display:flex; justify-content:space-between; align-items:center; gap:6px; margin:4px 0; }
+  .row label { flex:0 0 70px; color:#9fb0cc; font-size:12px; }
+  .row input[type=range] { flex:1; min-width:40px; }
+  .row .val { flex:0 0 42px; text-align:right; color:#7f8899; font-variant-numeric:tabular-nums;
+              font-size:11px; }
+  .sect { margin:9px 0 3px; font-size:11px; color:#6f7c92; border-top:1px solid #2f343d; padding-top:7px; }
+  .chk { display:flex; align-items:center; gap:4px; color:#9fb0cc; font-size:11.5px; white-space:nowrap; }
+  .dbg { font-size:10.5px; color:#6f7c92; margin-top:3px; word-break:break-all; line-height:1.35; }
+  #diag { font-size:10.5px; color:#6f7c92; margin:0 0 6px; word-break:break-all; }
+  select { background:#2b303a; color:#cfd4dc; border:1px solid #3a4150; border-radius:6px;
+           padding:2px 5px; font-size:11.5px; }
+  code { font-size:10.5px; color:#6f7c92; }
+  #frame { width:100%; border-radius:8px; background:#0d1015; display:block; }
 </style>
 </head>
 <body>
   <header>
-    <h1>Aniface · 小熊猫合成到摄像头画面</h1>
+    <h1>Aniface · 小熊猫合成</h1>
     <span id="status">未开始</span>
   </header>
 
@@ -62,28 +80,29 @@
       <div class="stats">
         <span>分辨率</span><b id="s_res">-</b>
         <span>帧率</span><b id="s_fps">-</b>
-        <span>检测耗时</span><b id="s_lat">-</b>
+        <span>检测</span><b id="s_lat">-</b>
         <span>人脸</span><b id="s_face">-</b>
         <span>关键点</span><b id="s_pts">-</b>
-        <span>设备</span><b id="s_dev" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">-</b>
+        <span>设备</span><b id="s_dev">-</b>
       </div>
-      <div class="row" style="margin-top:8px">
+      <div class="row">
         <button id="start">启动摄像头</button>
         <label class="chk"><input type="checkbox" id="c_lm" checked> 关键点</label>
         <label class="chk"><input type="checkbox" id="c_mesh"> 网格</label>
         <label class="chk"><input type="checkbox" id="c_mirror" checked> 镜像</label>
+        <button id="stopCam" class="ghost">停止</button>
       </div>
-      <div class="row" style="margin-top:6px">
-        <label class="chk" style="flex:0 0 auto"><input type="checkbox" id="blur_on"> 背景虚化</label>
+      <div class="sect">背景虚化</div>
+      <div class="row">
+        <label class="chk" style="flex:0 0 auto"><input type="checkbox" id="blur_on"> 开启</label>
         <input type="range" id="blur_px" min="2" max="40" step="1" value="14">
         <span class="val" id="blurv_px">14</span>
       </div>
       <div class="row">
         <label class="chk"><input type="checkbox" id="blur_invert"> 反转遮罩</label>
-        <code>虚化只作用于「合成视图」</code>
+        <code>只作用于合成视图</code>
       </div>
-      <div id="blur_dbg" style="font-size:11px;color:#7f8899;margin-top:2px;word-break:break-all">-</div>
-      <div class="row"><code>需 https:// 或 localhost</code><button id="stopCam" class="ghost" style="padding:4px 10px">停止</button></div>
+      <div id="blur_dbg" class="dbg">-</div>
     </section>
 
     <!-- ② 合成视图 -->
@@ -94,55 +113,58 @@
         <label class="chk"><input type="checkbox" id="cp_on" checked> 合成</label>
         <code id="cp_hint">需先有画面（摄像头或文件）</code>
       </div>
-      <div id="cp_dbg" style="font-size:11px;color:#7f8899;margin-top:4px;word-break:break-all">-</div>
+      <div class="sect">合成设置（贴到画面上的位置 / 大小）</div>
+      <div class="row"><label>大小</label><input type="range" id="cp_size" min="0.2" max="4" step="0.01" value="1.8"><span class="val" id="cpv_size">1.80</span></div>
+      <div class="row"><label>偏移 X</label><input type="range" id="cp_dx" min="-0.6" max="0.6" step="0.005" value="0"><span class="val" id="cpv_dx">0.00</span></div>
+      <div class="row"><label>偏移 Y</label><input type="range" id="cp_dy" min="-0.6" max="0.6" step="0.005" value="0"><span class="val" id="cpv_dy">0.00</span></div>
+      <div class="row"><button id="cp_reset" class="ghost">重置合成</button><code>按人脸框自动对位</code></div>
+      <div id="cp_dbg" class="dbg">-</div>
     </section>
 
-    <!-- ③ 控制 -->
+    <!-- ③ 输出视图 -->
+    <section class="card" id="outcard">
+      <h2>③ 输出视图（选区 × 倍率 × 蒙版）</h2>
+      <canvas id="output" width="320" height="320"></canvas>
+      <div class="sect">选区</div>
+      <div class="row"><label>宽</label><input type="range" id="sel_w" min="50" max="1920" step="1" value="400"><span class="val" id="selv_w">400</span></div>
+      <div class="row"><label>高</label><input type="range" id="sel_h" min="50" max="1920" step="1" value="400"><span class="val" id="selv_h">400</span></div>
+      <div class="row"><label>位置 X</label><input type="range" id="sel_x" min="0" max="1" step="0.001" value="0.5"><span class="val" id="selv_x">0.50</span></div>
+      <div class="row"><label>位置 Y</label><input type="range" id="sel_y" min="0" max="1" step="0.001" value="0.5"><span class="val" id="selv_y">0.50</span></div>
+      <div class="row"><label>倍率</label><input type="range" id="sel_mul" min="0.25" max="4" step="0.05" value="1"><span class="val" id="selv_mul">1.00</span></div>
+      <div class="sect">蒙版</div>
+      <div class="row"><label>形状</label>
+        <select id="sel_mask">
+          <option value="none">无</option>
+          <option value="round">圆角矩形</option>
+          <option value="circle">圆形</option>
+        </select>
+        <span class="val" id="selv_mask">无</span>
+      </div>
+      <div class="row"><label>圆角</label><input type="range" id="sel_radius" min="0" max="50" step="1" value="18"><span class="val" id="selv_radius">18%</span></div>
+      <div class="row"><label>羽化</label><input type="range" id="sel_feather" min="0" max="30" step="1" value="0"><span class="val" id="selv_feather">0</span></div>
+      <div class="row"><button id="sel_reset" class="ghost">重置</button><code id="sel_info">400×400 → 400×400</code></div>
+      <code>提示：可直接在合成视图里拖拽选区</code>
+    </section>
+
+    <!-- ④ 模型与控制 -->
     <aside>
       <div class="card">
-        <h2>3D 模型（源）</h2>
-        <div class="modelbox"><canvas id="avatar" width="300" height="300"></canvas></div>
-        <div class="row" style="margin-top:6px"><button id="view_reset" class="ghost" style="padding:4px 10px">重置视图</button><code>滚轮缩放易误触</code></div>
-        <div id="mv_dbg" style="font-size:11px;color:#7f8899;margin-top:4px;word-break:break-all">-</div>
-      </div>
-
-      <div class="card">
-        <h2>合成设置</h2>
-        <div class="row"><label>大小</label><input type="range" id="cp_size" min="0.2" max="4" step="0.01" value="1.8"><span class="val" id="cpv_size">1.80</span></div>
-        <div class="row"><label>偏移 X</label><input type="range" id="cp_dx" min="-0.6" max="0.6" step="0.005" value="0"><span class="val" id="cpv_dx">0.00</span></div>
-        <div class="row"><label>偏移 Y</label><input type="range" id="cp_dy" min="-0.6" max="0.6" step="0.005" value="0"><span class="val" id="cpv_dy">0.00</span></div>
-        <div class="row"><button id="cp_reset" class="ghost">重置合成</button><code>按人脸框自动对位</code></div>
-      </div>
-
-      <div class="card">
-        <h2>输出视图（选区裁剪 × 倍率）</h2>
-        <div class="modelbox"><canvas id="output" width="320" height="320"></canvas></div>
-        <div class="row"><label>选区宽</label><input type="range" id="sel_w" min="50" max="1920" step="1" value="400"><span class="val" id="selv_w">400</span></div>
-        <div class="row"><label>选区高</label><input type="range" id="sel_h" min="50" max="1920" step="1" value="400"><span class="val" id="selv_h">400</span></div>
-        <div class="row"><label>位置 X</label><input type="range" id="sel_x" min="0" max="1" step="0.001" value="0.5"><span class="val" id="selv_x">0.50</span></div>
-        <div class="row"><label>位置 Y</label><input type="range" id="sel_y" min="0" max="1" step="0.001" value="0.5"><span class="val" id="selv_y">0.50</span></div>
-        <div class="row"><label>输出倍率</label><input type="range" id="sel_mul" min="0.25" max="4" step="0.05" value="1"><span class="val" id="selv_mul">1.00</span></div>
-        <div class="row"><button id="sel_reset" class="ghost">重置选区</button><code id="sel_info">400×400 → 400×400</code></div>
-        <div class="row"><label>蒙版</label>
-          <select id="sel_mask">
-            <option value="none">无</option>
-            <option value="round">圆角矩形</option>
-            <option value="circle">圆形</option>
-          </select>
-          <span class="val" id="selv_mask">无</span>
+        <h2>3D 模型（源 · 透明背景）</h2>
+        <canvas id="avatar" width="240" height="240"></canvas>
+        <div class="row" style="margin-top:6px">
+          <button id="view_reset" class="ghost">重置视图</button>
+          <code>鼠标拖拽旋转 · 滚轮缩放</code>
         </div>
-        <div class="row"><label>圆角</label><input type="range" id="sel_radius" min="0" max="50" step="1" value="18"><span class="val" id="selv_radius">18%</span></div>
-        <div class="row"><label>边缘羽化</label><input type="range" id="sel_feather" min="0" max="30" step="1" value="0"><span class="val" id="selv_feather">0</span></div>
-        <div class="row"><code>提示：在合成视图里可直接拖拽移动选区</code></div>
+        <div id="mv_dbg" class="dbg">-</div>
       </div>
 
       <div class="card">
-        <h2>位置 / 缩放（模型自身）</h2>
+        <h2>模型变换（画布内）</h2>
         <div class="row"><label>Scale</label><input type="range" id="t_scale" min="0.1" max="8" step="0.01" value="1"><span class="val" id="tv_scale">1.00</span></div>
         <div class="row"><label>X offset</label><input type="range" id="t_x" min="-6" max="6" step="0.01" value="0"><span class="val" id="tv_x">0.00</span></div>
         <div class="row"><label>Y offset</label><input type="range" id="t_y" min="-6" max="6" step="0.01" value="0"><span class="val" id="tv_y">0.00</span></div>
         <div class="row"><label>Z offset</label><input type="range" id="t_z" min="-6" max="6" step="0.01" value="0"><span class="val" id="tv_z">0.00</span></div>
-        <div class="row"><button id="t_reset" class="ghost">重置</button><code>鼠标拖拽/滚轮</code></div>
+        <div class="row"><button id="t_reset" class="ghost">重置</button></div>
       </div>
 
       <div class="card">
@@ -156,13 +178,13 @@
       </div>
 
       <div class="card">
-        <h2>用视频/图片文件测试</h2>
+        <h2>用视频 / 图片文件测试</h2>
         <input type="file" id="file" accept="video/*,image/*" />
-        <div class="row" style="margin-top:8px">
+        <div class="row" style="margin-top:6px">
           <button id="playSample" class="ghost">内置样例图</button>
           <button id="stopFile" class="ghost">停止</button>
         </div>
-        <img id="frame" alt="" style="margin-top:8px" />
+        <img id="frame" alt="" style="margin-top:6px" />
       </div>
       <code>redpanda_head.glb · 52 个 ARKit 表情 · head-only · 0.84 MB</code>
     </aside>
@@ -170,8 +192,3 @@
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>
-
-
-
-
-
