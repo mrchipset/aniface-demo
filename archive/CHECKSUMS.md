@@ -30,3 +30,17 @@
 - 2026-10-12 由 `Untitled.blend` 另存改名而来（原名已删除）
 - 内容：小熊猫 4 个部件（`head_geo.002` 5304 顶点 / 53 个 shape key、`ears_geo`、`hair_geo`、`tufts_geo`）+ 材质与贴图引用
 - 注意：该文件是**实验累积场景**，除小熊猫外还包含人类头像（`AnifaceHead`）、RPM 全身像部件、金属 `Cube`、`Icosphere` 等历史对象
+
+## Blender 源工程（干净版）
+
+| 文件 | 字节 | SHA256 |
+|---|---|---|
+| `redpanda_only.blend` | 1972291 | `7C37C968EE9EF33FC5432439368BB2F93D5B0352FE4C66CEBC611E3CF97388EC` |
+
+- 由 `redpanda_source.blend` 删减而来：移除 14 个无关对象（人类头像、RPM 部件、Cube、Icosphere、HeadCam 等）
+  并清理 2645 个孤立数据块
+- 保留：小熊猫 4 部件 + `raccoon_head` 空物体 + `Camera`（已对准）+ `Light` + 环境光
+- `head_geo.002`：5304 顶点、**53 个 shape key 完好**、材质仅 `MAT_Racoon.004`（无残留空槽）
+- 体积 8.77 MB → **1.88 MB**
+- 附带 `redpanda_only_preview.png`（打开即渲染的验证图）
+

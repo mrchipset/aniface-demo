@@ -25,6 +25,7 @@
 ├── fit3.py / mp_lm.py         MediaPipe 关键点 → ICT 身份系数拟合
 │
 ├── redpanda_head.glb          ★ 小熊猫头像（0.84 MB，meshopt）
+├── redpanda_only.blend        ★ 小熊猫 Blender 源工程 · 干净版（1.88 MB，开箱可渲染）
 ├── redpanda_source.blend      ★ 小熊猫 Blender 源工程（8.8 MB，含 53 个 shape key）
 ├── raccoon_head_small.glb     基座模型（aniface 官方 demo 素材，MIT）
 ├── rpm_avatar.glb             Ready Player Me 全身像（来源确证，作参考）
