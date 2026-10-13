@@ -188,12 +188,14 @@ git clone --depth 1 https://github.com/USC-ICT/ICT-FaceKit.git
 │
 ├── .github/workflows/         GitHub Pages 构建与发布
 ├── AGENTS.md                  ★ 工程笔记：30+ 条实测踩坑与硬约束（动手前先读）
+├── LICENSE                    MIT
 ├── docs/STATUS.md             当前问题清单 + 两条流水线的完整步骤
 ├── archive/CHECKSUMS.md       产物 SHA256 与归档说明
 │
 └── work/                      ★ 建模工作目录（详见 work/README.md）
     ├── assets/                模型 / 贴图 / 中间数据（脚本的 CWD）
-    │   └── renders/           迭代渲染图留档
+    │   ├── renders/           迭代渲染图留档
+    │   └── textures/          Blender 源工程引用的环境贴图（CC0）
     └── scripts/
         ├── pipeline.py        ★ 真人头像一键重建
         ├── facekit/           ICT 身份拟合、对齐、贴图、瘦身导出
@@ -216,8 +218,9 @@ git clone --depth 1 https://github.com/USC-ICT/ICT-FaceKit.git
 
 ## 许可与致谢
 
+- 本项目采用 **MIT** 许可，见 [LICENSE](LICENSE)
 - 上游 [ICT-FaceKit](https://github.com/USC-ICT/ICT-FaceKit)、[aniface](https://github.com/alysachan830/aniface)、
   `mcp-for-blender` 均为 **MIT**，本项目对其的使用与二次开发遵循各自许可
 - `rpm_avatar.glb`（Ready Player Me 全身像）仅作参考对比，遵循 Ready Player Me 条款
-- 本仓库**尚未附带自己的 LICENSE**；若要公开发布建议补一个（如 MIT）
+- `work/assets/textures/studio_kontrast_03_1k.hdr`（环境贴图）来自 PolyHaven，**CC0**，可自由再分发
 - 仓库不包含任何真人照片素材；演示请用「用视频 / 图片文件测试」自选本地文件

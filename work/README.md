@@ -9,7 +9,8 @@ work/
 │   ├── *.glb / *.blend     模型与 Blender 源工程
 │   ├── *.png               贴图（racc_tex_*、redpanda_base*、redpanda_ear*…）与参考图
 │   ├── *.npy / *.npz / *.json  中间数据（多数在 .gitignore 中，可由脚本重建）
-│   └── renders/            迭代过程中的渲染与预览图（纯留档，没有脚本读取）★
+│   ├── renders/            迭代过程中的渲染与预览图（纯留档，没有脚本读取）★
+│   └── textures/           源工程引用的环境贴图（PolyHaven CC0，相对路径 `//textures/...`）
 └── scripts/
     ├── pipeline.py         ★ 真人头像一键重建（主线入口）
     ├── facekit/            人头流水线：ICT 身份拟合、对齐、贴图、瘦身导出

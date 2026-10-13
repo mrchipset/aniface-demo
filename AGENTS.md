@@ -135,3 +135,5 @@ uv run --python 3.11 --with numpy python work\scripts\tools\glb_verify.py
 - 5173 端口属于另一个项目，不要占用或终止其进程。
 - 不要把 `certs/`（私钥）、`*.npy`（派生数据）、`node_modules/`、`ICT-FaceKit/` 提交进 git。
 - **不要把任何真人照片素材提交进仓库**（`aniface-demo/public/sample.jpg` 这张证件照已从工作区与全部提交历史中移除）。要试演示效果，用「用视频 / 图片文件测试」自己选本地文件，文件不会进仓库。
+- **`.blend` 里会藏本机路径**：图片数据块名、`image.filepath`、`scene.render.filepath`、以及打包图片的 `PackedFile.filepath`（Python 改 `image.filepath` 清不掉它，需 unpack→改用相对路径）。清理后用「另存一份未压缩副本再全字符串扫描」验证——**直接扫文件没用，.blend 默认是 zstd 压缩的**。
+- 但 `C:\Users\<用户名>\Documents` 消不掉：**任何在本机保存的 .blend 都会写入**（全新空白工程实测同样存在），属 Blender 写 UI 状态的固有行为。

@@ -29,11 +29,19 @@
 
 | 文件 | 字节 | SHA256 |
 |---|---|---|
-| `work/assets/redpanda_source.blend` | 9191340 | `601953B545F0E30F4FC60B32703C9CB05397389016D9C36FC5E3338BE7F4CC8C` |
+| `work/assets/redpanda_source.blend` | 8193159 | `8B4E588FDF03D129F5BC8DE5F14D26FB1327A52EB27FF95B70A841C1192ED3E9` |
+| `work/assets/textures/studio_kontrast_03_1k.hdr` | 1473616 | （PolyHaven CC0 环境贴图，见下）|
 
 - 2026-10-12 由 `Untitled.blend` 另存改名而来（原名已删除）
 - 内容：小熊猫 4 个部件（`head_geo.002` 5304 顶点 / 53 个 shape key、`ears_geo`、`hair_geo`、`tufts_geo`）+ 材质与贴图引用
 - 注意：该文件是**实验累积场景**，除小熊猫外还包含人类头像（`AnifaceHead`）、RPM 全身像部件、金属 `Cube`、`Icosphere` 等历史对象
+- **2026-10-13 隐私清理**（指纹已更新为上面的新值）：
+  - 删除 2 个指向本机的图片数据块：`Weixin Image_20260118215538_47_32 (1).jpg`（本人照片，被 `PhotoFace` 材质引用）与 `codex-clipboard-WBfeXA.png`（剪贴板临时图，被 `PortraitFace` 引用）
+  - 清空 scene 的 `render.filepath`（原为 `C:\Users\...\final_34.png`）
+  - 环境贴图由「打包 + 记录绝对路径」改为**相对路径 `//textures/studio_kontrast_03_1k.hdr`**，所以多了上面那个 1.4 MB 的 HDR 文件（CC0，可自由再分发）
+  - 副作用：`PhotoFace` / `PortraitFace` 两个材质的贴图节点变为空（这两张贴图本来就已失效，且照片投影方案已废弃）；一个无引用的孤儿图片 `Image_1` 被 Blender 自动清理
+  - 场景结构未变：21 个对象、28 个材质、`head_geo.002` 仍是 53 个 shape key
+  - ⚠️ 仍无法消除：任何在本机保存的 .blend 都会记录 `C:\Users\Zouyu\Documents`（Blender 写 UI 状态时的固有行为，用全新空白工程实测同样存在）
 
 ## Blender 源工程（干净版）
 
