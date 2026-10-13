@@ -201,9 +201,11 @@
        git remote add origin https://github.com/<用户名>/<仓库名>.git
        git push -u origin main
 
-3. ~~手动开 Pages~~ **不用**：工作流里的 `configure-pages` 带 `enablement: true`，会自动开启并设为 GitHub Actions 源。
-   若自动开启失败（提示 `Pages site not found`），再去 **Settings → Pages → Source** 手动选 **GitHub Actions** 并重跑
-4. 首次推送会自动触发 `Deploy aniface demo to GitHub Pages`；也可在 **Actions** 页手动 `Run workflow`
+3. **必须先手动开一次 Pages**：仓库 **Settings → Pages → Build and deployment → Source** 选 **GitHub Actions**。
+   自动开启不可靠——工作流里的 GITHUB_TOKEN 没有创建 Pages 站点的管理员权限，
+   实测会卡在 `actions/configure-pages` 这一步（所以工作流里已经把它去掉了）。
+   判断有没有开：`https://api.github.com/repos/<用户名>/<仓库名>/pages` 返回 200 就是开了，404 就是没开。
+4. 之后每次推送到 `main` 会自动触发 `Deploy aniface demo to GitHub Pages`；也可在 **Actions** 页手动 `Run workflow`
 5. 等 1~2 分钟后访问 `https://<用户名>.github.io/<仓库名>/`
 
 ### CI 里做了什么（见仓库根 `.github/workflows/deploy-pages.yml`）

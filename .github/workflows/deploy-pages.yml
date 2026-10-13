@@ -54,12 +54,11 @@ jobs:
           BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build
 
-      # enablement: true —— 若仓库还没开 Pages，自动开启并把 Source 设为 GitHub Actions
-      # （失败也不影响：手动去 Settings → Pages → Source 选 GitHub Actions 再重跑即可）
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-
+      # 注意：这里刻意不用 actions/configure-pages。
+      # 它的作用是自动开启 Pages 并注入 base path —— 但自动开启需要仓库管理员权限，
+      # 用内置 GITHUB_TOKEN 常常失败（本仓库实测就是卡在这一步）。
+      # 本项目已经用 BASE_PATH 自己算好子路径，所以不需要它。
+      # 前提：仓库 Settings → Pages → Source 必须是 "GitHub Actions"（一次性手动设置）。
       - uses: actions/upload-pages-artifact@v3
         with:
           path: aniface-demo/dist
