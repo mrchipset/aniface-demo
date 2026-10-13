@@ -113,12 +113,14 @@
 21. `selfsigned` **v5 是 async-only**（要 `await generate(...)`）；证书需带 SAN（含本机 IP），否则浏览器报名称不匹配。
 22. **部署到子路径（GitHub Pages 的 `/<repo>/`）时，静态资源的根绝对路径会 404**。`main.js` 里所有资源路径必须走 `asset()`（= `import.meta.env.BASE_URL` + 相对路径），构建时用 `BASE_PATH=/<repo>/ npm run build`。新增资源别写 `/xxx`。
 23. GitHub Pages 只发布 **Actions artifact**，所以 `public/mediapipe/`（36MB）不入库也可用——CI 里跑 `npm run vendor:mediapipe` 现生成（WASM 取自 `node_modules`，模型从 Google 官方下载）。仓库根是 `blender/`，工作流里 `working-directory: aniface-demo`、`path: aniface-demo/dist`，别搞错层级。
+24. **建模产物与脚本一律放 `work/` 下**，仓库根只保留文档与 `aniface-demo/`。`work/assets/` 保持**扁平**是刻意的：历史脚本用裸文件名读写素材，路径相对**进程 CWD**，拆子目录会让 60 多个脚本一起失效；只有确定没脚本读取的渲染图才进 `work/assets/renders/`。`.blend` 用 `//` 相对路径引用贴图，**必须和贴图同目录**。
+25. 跑主线脚本用 `work/scripts/pipeline.py`（自带路径自定位，从任意目录都能找到 `work/assets`）；跑 `redpanda/` 下的历史脚本前先把 CWD 切到 `work/assets`。
 
 ## 验证清单（改动后必做）
 
 ```powershell
 # 1) GLB 规格
-uv run --python 3.11 --with numpy python glb_verify.py
+uv run --python 3.11 --with numpy python work\scripts\tools\glb_verify.py
 #    期望：morph 名 52/52 ARKit；extensionsRequired = EXT_meshopt_compression；
 #          skins = 0（head-only）；无 draco
 # 2) 渲染对比：Blender 内渲染到文件后 look(image=...)

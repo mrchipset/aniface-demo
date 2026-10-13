@@ -1,5 +1,31 @@
-import mediapipe as mp, numpy as np
+import os, mediapipe as mp, numpy as np
 from PIL import Image, ImageDraw, ImageFont
+
+# --- 切到 work/assets（输入照片与输出的 mp_landmarks.npy / lm_check.png 都在那里）---
+def _assets_dir():
+    def root(c):
+        p = os.path.abspath(c)
+        while True:
+            if os.path.isdir(os.path.join(p, "work", "assets")):
+                return p
+            q = os.path.dirname(p)
+            if q == p:
+                raise RuntimeError()
+            p = q
+    cands = []
+    try:
+        cands.append(os.path.dirname(os.path.abspath(__file__)))
+    except NameError:
+        pass
+    cands.append(os.getcwd())
+    for c in cands:
+        try:
+            return os.path.join(root(c), "work", "assets")
+        except RuntimeError:
+            continue
+    raise RuntimeError("找不到 work/assets，请从仓库目录内运行本脚本")
+
+os.chdir(_assets_dir())
 
 PHOTO = os.environ.get("PHOTO", "photo.jpg")
 img = Image.open(PHOTO).convert("RGB")

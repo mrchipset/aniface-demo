@@ -33,3 +33,12 @@ __pycache__/
 # ---------- MediaPipe 本地运行时（npm run vendor:mediapipe 生成，约 36MB） ----------
 aniface-demo/public/mediapipe/
 
+# ---------- 建模工作目录（work/）----------
+# 真人照片与其调试图：绝不入库
+work/assets/photo.jpg
+work/assets/*.jpg
+work/assets/lm_check.png
+work/assets/head_pass*.png
+# 迭代过程中的临时渲染（可重跑脚本生成）
+work/assets/renders/tmp_*.png
+

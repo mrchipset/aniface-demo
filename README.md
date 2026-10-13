@@ -7,9 +7,9 @@
 以及一份把两次实践中所有坑记录下来的工程笔记。
 
 <p align="center">
-  <img src="redpanda_ref.png" width="260" alt="参考图">
+  <img src="work/assets/redpanda_ref.png" width="260" alt="参考图">
   &nbsp;&nbsp;➜&nbsp;&nbsp;
-  <img src="final_f.png" width="260" alt="生成的小熊猫头像">
+  <img src="work/assets/renders/final_f.png" width="260" alt="生成的小熊猫头像">
   <br>
   <sub>参考图 ➜ 程序化生成的 <code>redpanda_head.glb</code>（52 个 ARKit 表情，0.84 MB）</sub>
 </p>
@@ -137,13 +137,14 @@ npm run vendor:mediapipe   # 把 MediaPipe 运行时本地化（约 36MB，避�
 
 | 文件 | 说明 |
 |---|---|
-| `redpanda_head.glb` | ★ 小熊猫头像，52 个 ARKit 表情，head-only，meshopt 压缩，**0.84 MB** |
+| `work/assets/redpanda_head.glb` | ★ 小熊猫头像，52 个 ARKit 表情，head-only，meshopt 压缩，**0.84 MB** |
 | `aniface-demo/public/redpanda_head.glb` | 同一模型（演示用副本） |
-| `redpanda_only.blend` | ★ 小熊猫 Blender 源工程 · 干净版（1.88 MB，开箱可渲染） |
-| `redpanda_source.blend` | 小熊猫源工程 · 实验全场景（8.8 MB，含 53 个 shape key） |
-| `raccoon_head_small.glb` | 上游卡通基座（MIT），流水线 B 的输入 |
-| `redpanda_base3.png` / `redpanda_ear3.png` | 重映射生成的主体 / 耳朵贴图 |
-| `final_f.png` / `redpanda_only_preview.png` | 最终渲染 |
+| `work/assets/redpanda_only.blend` | ★ 小熊猫 Blender 源工程 · 干净版（1.88 MB，开箱可渲染） |
+| `work/assets/redpanda_source.blend` | 小熊猫源工程 · 实验全场景（8.8 MB，含 53 个 shape key） |
+| `work/assets/raccoon_head_small.glb` | 上游卡通基座（MIT），流水线 B 的输入 |
+| `work/assets/redpanda_base3.png` / `redpanda_ear3.png` | 重映射生成的主体 / 耳朵贴图 |
+| `work/assets/renders/` | 迭代渲染图（`final_f.png`、`redpanda_only_preview.png` 等） |
+| `work/scripts/` | 全部建模脚本（`pipeline.py`、`facekit/`、`redpanda/`、`tools/`） |
 
 校验和与归档说明见 [archive/CHECKSUMS.md](archive/CHECKSUMS.md)。
 
@@ -153,11 +154,11 @@ npm run vendor:mediapipe   # 把 MediaPipe 运行时本地化（约 36MB，避�
 
 ```python
 # 在 Blender（已装 mcp-for-blender）里执行
-exec(open(r"pipeline.py", encoding="utf-8").read())
+exec(open(r"work/scripts/pipeline.py", encoding="utf-8").read())
 ```
 
 需要：`ICT-FaceKit/` 已 clone、`ict_fit.json`、
-`ict_neutral.npy` / `ict_ids.npy`（由 `fit3.py` 生成）、一张正面照片。
+`ict_neutral.npy` / `ict_ids.npy`（由 `work/scripts/facekit/fit3.py` 生成）、一张正面照片。
 
 ```bash
 git clone --depth 1 https://github.com/USC-ICT/ICT-FaceKit.git
@@ -186,14 +187,18 @@ git clone --depth 1 https://github.com/USC-ICT/ICT-FaceKit.git
 │   └── README.md              界面说明 · 操作技巧 · 排错
 │
 ├── .github/workflows/         GitHub Pages 构建与发布
-├── pipeline.py                ★ 真人头像一键重建
-├── fit3.py / mp_lm.py         MediaPipe 关键点 → ICT 身份系数拟合
-├── rp_*.py                    小熊猫制作过程脚本（逐版本迭代留档）
-├── glb_verify.py              GLB 规格校验（morph 名 / 压缩 / 骨骼）
-│
 ├── AGENTS.md                  ★ 工程笔记：30+ 条实测踩坑与硬约束（动手前先读）
 ├── docs/STATUS.md             当前问题清单 + 两条流水线的完整步骤
-└── archive/CHECKSUMS.md       产物 SHA256 与归档说明
+├── archive/CHECKSUMS.md       产物 SHA256 与归档说明
+│
+└── work/                      ★ 建模工作目录（详见 work/README.md）
+    ├── assets/                模型 / 贴图 / 中间数据（脚本的 CWD）
+    │   └── renders/           迭代渲染图留档
+    └── scripts/
+        ├── pipeline.py        ★ 真人头像一键重建
+        ├── facekit/           ICT 身份拟合、对齐、贴图、瘦身导出
+        ├── redpanda/          小熊猫配色重映射、UV 绘制、导出
+        └── tools/             GLB 规格校验与分析
 ```
 
 ## 已知不足

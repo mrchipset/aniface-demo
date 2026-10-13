@@ -1,8 +1,36 @@
 import bpy, os, json, math, mathutils, numpy as np
 
-FOLDER = r"ICT-FaceKit\FaceXModel"
-OUT    = r"."
-PHOTO  = os.environ.get("PHOTO", "photo.jpg")
+# --- 路径自定位 ---------------------------------------------------------------
+# 本脚本在 work/scripts/ 下，素材与中间数据统一在 work/assets/，
+# ICT-FaceKit 在仓库根。这样从任何目录运行（含 Blender 里 exec(open(...).read())）都能找到。
+def _repo_root(start=None):
+    p = os.path.abspath(start or os.getcwd())
+    while True:
+        if os.path.isdir(os.path.join(p, "work", "assets")):
+            return p
+        q = os.path.dirname(p)
+        if q == p:
+            raise RuntimeError("找不到仓库根（应包含 work/assets）")
+        p = q
+
+def _assets_dir():
+    cands = []
+    try:
+        cands.append(os.path.dirname(os.path.abspath(__file__)))
+    except NameError:          # 通过 exec(open(...).read()) 运行时没有 __file__
+        pass
+    cands.append(os.getcwd())
+    for c in cands:
+        try:
+            return os.path.join(_repo_root(c), "work", "assets")
+        except RuntimeError:
+            continue
+    raise RuntimeError("找不到 work/assets，请从仓库目录内运行本脚本")
+
+OUT    = _assets_dir()
+ROOT   = _repo_root(OUT)
+FOLDER = os.path.join(ROOT, "ICT-FaceKit", "FaceXModel")
+PHOTO  = os.environ.get("PHOTO", os.path.join(OUT, "photo.jpg"))
 
 cfg = json.load(open(os.path.join(FOLDER,"vertex_indices.json")))
 exprs = cfg["expressions"]

@@ -1,5 +1,31 @@
 import json, struct, os, sys
-p = sys.argv[1] if len(sys.argv) > 1 else r"redpanda_head.glb"
+
+def _repo_root(start=None):
+    p = os.path.abspath(start or os.getcwd())
+    while True:
+        if os.path.isdir(os.path.join(p, "work", "assets")):
+            return p
+        q = os.path.dirname(p)
+        if q == p:
+            raise RuntimeError("找不到仓库根（应包含 work/assets）")
+        p = q
+
+def _assets_dir():
+    cands = []
+    try:
+        cands.append(os.path.dirname(os.path.abspath(__file__)))
+    except NameError:
+        pass
+    cands.append(os.getcwd())
+    for c in cands:
+        try:
+            return os.path.join(_repo_root(c), "work", "assets")
+        except RuntimeError:
+            continue
+    raise RuntimeError("找不到 work/assets，请从仓库目录内运行本脚本")
+
+# 默认校验 work/assets/redpanda_head.glb，也可传入任意 GLB 路径
+p = sys.argv[1] if len(sys.argv) > 1 else os.path.join(_assets_dir(), "redpanda_head.glb")
 d=open(p,'rb').read(); off=12; js=None
 while off<len(d):
     cl,ct=struct.unpack("<II",d[off:off+8])
