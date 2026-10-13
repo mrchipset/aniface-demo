@@ -1,5 +1,24 @@
 import json, struct, os, math
-p = r"redpanda_head.glb"
+
+def _assets():
+    """定位仓库根下的 work/assets，从任何目录运行都能找到。"""
+    cands = []
+    if "__file__" in globals():
+        cands.append(os.path.dirname(os.path.abspath(__file__)))
+    cands.append(os.getcwd())
+    for c in cands:
+        p = os.path.abspath(c)
+        while True:
+            if os.path.isdir(os.path.join(p, "work", "assets")):
+                return os.path.join(p, "work", "assets")
+            q = os.path.dirname(p)
+            if q == p:
+                break
+            p = q
+    raise RuntimeError("找不到 work/assets，请从仓库目录内运行本脚本")
+
+import sys
+p = sys.argv[1] if len(sys.argv) > 1 else os.path.join(_assets(), "redpanda_head.glb")
 d=open(p,'rb').read(); off=12; js=None; bin=None
 while off<len(d):
     cl,ct=struct.unpack("<II",d[off:off+8])

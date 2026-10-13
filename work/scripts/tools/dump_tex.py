@@ -1,5 +1,23 @@
 import bpy, os
-OUT=r"."
+
+def _assets():
+    """定位仓库根下的 work/assets，从任何目录运行都能找到。"""
+    cands = []
+    if "__file__" in globals():
+        cands.append(os.path.dirname(os.path.abspath(__file__)))
+    cands.append(os.getcwd())
+    for c in cands:
+        p = os.path.abspath(c)
+        while True:
+            if os.path.isdir(os.path.join(p, "work", "assets")):
+                return os.path.join(p, "work", "assets")
+            q = os.path.dirname(p)
+            if q == p:
+                break
+            p = q
+    raise RuntimeError("找不到 work/assets，请从仓库目录内运行本脚本")
+
+OUT = _assets()
 for im in bpy.data.images:
     if im.size[0]==0: continue
     print("image:", im.name, im.size[:], im.colorspace_settings.name)

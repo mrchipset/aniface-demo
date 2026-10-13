@@ -1,6 +1,26 @@
 import json, struct, os
 from collections import defaultdict
-p = r"aniface_head.glb"
+
+def _assets():
+    """定位仓库根下的 work/assets，从任何目录运行都能找到。"""
+    cands = []
+    if "__file__" in globals():
+        cands.append(os.path.dirname(os.path.abspath(__file__)))
+    cands.append(os.getcwd())
+    for c in cands:
+        p = os.path.abspath(c)
+        while True:
+            if os.path.isdir(os.path.join(p, "work", "assets")):
+                return os.path.join(p, "work", "assets")
+            q = os.path.dirname(p)
+            if q == p:
+                break
+            p = q
+    raise RuntimeError("找不到 work/assets，请从仓库目录内运行本脚本")
+
+import sys
+# 注意：原默认值 aniface_head.glb（人类头像）已因内嵌真人照片被移除，改默认校验小熊猫
+p = sys.argv[1] if len(sys.argv) > 1 else os.path.join(_assets(), "redpanda_head.glb")
 data = open(p,'rb').read()
 magic, ver, length = struct.unpack("<III", data[:12])
 off=12; js=None
