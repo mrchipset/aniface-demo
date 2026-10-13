@@ -7,7 +7,12 @@ import fs from 'node:fs'
 const haveCert = fs.existsSync('certs/cert.pem') && fs.existsSync('certs/key.pem')
 const useHttps = process.env.HTTPS !== '0' && (haveCert || process.env.HTTPS === '1')
 
+// 部署到子路径时用 BASE_PATH 指定公共前缀（GitHub Pages 为 /<repo>/）。
+// 例：BASE_PATH=/blender-aniface/ npm run build    默认 '/'（本地开发）
+const base = process.env.BASE_PATH || '/'
+
 export default defineConfig({
+  base,
   plugins: (useHttps && !haveCert) ? [basicSsl()] : [],
   server: {
     host: true,

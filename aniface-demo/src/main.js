@@ -2,10 +2,14 @@ import { Aniface } from 'aniface'
 import * as THREE from 'three'
 import { FaceLandmarker, ImageSegmenter, FilesetResolver, DrawingUtils } from '@mediapipe/tasks-vision'
 
+// 部署在子路径（如 GitHub Pages 的 /<repo>/）时，所有静态资源都要带 BASE_URL 前缀
+const BASE = import.meta.env.BASE_URL            // 一定以 '/' 结尾
+const asset = (p) => BASE + String(p).replace(/^\/+/, '')
+
 // MediaPipe 运行时来源：本地优先（npm run vendor:mediapipe 后可用），失败再退回 CDN
 const SOURCES = [
-  { name: '本地', wasm: '/mediapipe/wasm', model: '/mediapipe/face_landmarker.task',
-                  seg: '/mediapipe/selfie_segmenter.tflite' },
+  { name: '本地', wasm: asset('mediapipe/wasm'), model: asset('mediapipe/face_landmarker.task'),
+                  seg: asset('mediapipe/selfie_segmenter.tflite') },
   { name: 'CDN',  wasm: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm',
                   model: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
                   seg: 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite' },
@@ -44,7 +48,7 @@ async function ensureAvatar() {
   setStatus('加载模型…')
   avatar = new Aniface({
     canvasElement: canvas,
-    modelPath: '/redpanda_head.glb',
+    modelPath: asset('redpanda_head.glb'),
     cameraConfig: { fov: 40, enableControls: true, enableZoom: true },
     blendshapeMultipliers: {
       eyeBlinkLeft: 1.2, eyeBlinkRight: 1.2, jawOpen: 1.0,
@@ -265,7 +269,7 @@ $('file').addEventListener('change', async (ev) => {
 })
 $('playSample').addEventListener('click', async () => {
   stopFile(); video.src = ''; video.srcObject = null
-  frame.src = '/sample.jpg'
+  frame.src = asset('sample.jpg')
   await new Promise(r => { frame.onload = r }); setStatus('处理内置样例…'); runOnElement(frame, false)
 })
 

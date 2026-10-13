@@ -186,3 +186,57 @@
 ## 模型
 
 `public/redpanda_head.glb` —— 52 个 ARKit 表情（含 tongueOut）、head-only、meshopt 压缩、1.37 MB
+
+## 部署到 GitHub Pages
+
+线上地址形如 `https://<用户名>.github.io/<仓库名>/`。
+**Pages 自带 HTTPS，所以摄像头 API 在别人机器上直接可用**——比自己签证书让别人访问省事得多。
+
+### 一次性准备
+
+1. 在 GitHub 建一个**公开**空仓库（Pages 免费版只对公开仓库开放），**不要**勾选 Add README
+2. 本地加远程并推送（注意：仓库根目录是 `blender/`，`aniface-demo/` 是它的子目录，直接整个推）
+
+       cd C:\Users\Zouyu\tmp\blender
+       git remote add origin https://github.com/<用户名>/<仓库名>.git
+       git push -u origin main
+
+3. ~~手动开 Pages~~ **不用**：工作流里的 `configure-pages` 带 `enablement: true`，会自动开启并设为 GitHub Actions 源。
+   若自动开启失败（提示 `Pages site not found`），再去 **Settings → Pages → Source** 手动选 **GitHub Actions** 并重跑
+4. 首次推送会自动触发 `Deploy aniface demo to GitHub Pages`；也可在 **Actions** 页手动 `Run workflow`
+5. 等 1~2 分钟后访问 `https://<用户名>.github.io/<仓库名>/`
+
+### CI 里做了什么（见仓库根 `.github/workflows/deploy-pages.yml`）
+
+| 步骤 | 说明 |
+|---|---|
+| `npm ci` | 按 `package-lock.json` 干净安装 |
+| `npm run vendor:mediapipe` | **构建时**生成约 36MB 的 MediaPipe 运行时（WASM 从 `node_modules` 复制，模型从 Google 官方下载）——所以这些大文件**不需要进 git** |
+| `npm run check` | 校验所有 `$('id')` 引用，防止"引用了已删除元素"上线 |
+| `BASE_PATH=/<仓库名>/ npm run build` | 子路径构建，仓库名自动取自当前仓库，**换仓库名不用改配置** |
+| `upload-pages-artifact` + `deploy-pages` | 只发布 `aniface-demo/dist` |
+
+### 子路径是怎么处理的
+
+GitHub Pages 把站点挂在 `/<仓库名>/` 下，根绝对路径（`/redpanda_head.glb`）会 404。
+所以：
+
+- `vite.config.js` 读环境变量 `BASE_PATH` 作为 `base`（默认 `/`，本地开发不受影响）
+- `src/main.js` 用 `const BASE = import.meta.env.BASE_URL` + `asset('x')` 拼所有静态资源路径
+  （模型、样例图、MediaPipe 的 wasm/模型）
+
+**新增任何静态资源都要走 `asset()`**，不要写 `/xxx` 这种根路径。
+
+### 本地验证线上行为
+
+    cd aniface-demo
+    $env:BASE_PATH='/<仓库名>/'; $env:HTTPS='0'; npm run build
+    node node_modules\vite\bin\vite.js preview --port 4173 --strictPort
+    # 打开 http://localhost:4173/<仓库名>/   —— 资源应该全部 200
+
+### 注意事项
+
+- 部署内容 **37.7 MB**（主要是 MediaPipe 运行时），远低于 Pages 的站点体积上限
+- 仓库里**不含**上述大文件，`git push` 只有约 22 MB
+- 走 CDN 兜底也能用，但 `vendor:mediapipe` 更稳（不用看 Google/jsDelivr 的网络脸色）
+- 若以后换到自定义域名 / 根路径部署，把 `BASE_PATH` 设为 `/` 即可

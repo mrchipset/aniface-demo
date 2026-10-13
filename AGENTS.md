@@ -111,6 +111,8 @@
 19. `getUserMedia` 只在 **https 或 http://localhost** 下存在；用局域网 IP + http 会得到 `Cannot read properties of undefined (reading 'getUserMedia')`。演示页顶部有 `origin / secure / mediaDevices` 自检行。
 20. 用 `https://` 访问**只讲 HTTP 的服务**会报 `ERR_SSL_PROTOCOL_ERROR`。`aniface-demo` 默认已启用 HTTPS（`certs/` 存在即生效）。
 21. `selfsigned` **v5 是 async-only**（要 `await generate(...)`）；证书需带 SAN（含本机 IP），否则浏览器报名称不匹配。
+22. **部署到子路径（GitHub Pages 的 `/<repo>/`）时，静态资源的根绝对路径会 404**。`main.js` 里所有资源路径必须走 `asset()`（= `import.meta.env.BASE_URL` + 相对路径），构建时用 `BASE_PATH=/<repo>/ npm run build`。新增资源别写 `/xxx`。
+23. GitHub Pages 只发布 **Actions artifact**，所以 `public/mediapipe/`（36MB）不入库也可用——CI 里跑 `npm run vendor:mediapipe` 现生成（WASM 取自 `node_modules`，模型从 Google 官方下载）。仓库根是 `blender/`，工作流里 `working-directory: aniface-demo`、`path: aniface-demo/dist`，别搞错层级。
 
 ## 验证清单（改动后必做）
 
@@ -121,6 +123,8 @@ uv run --python 3.11 --with numpy python glb_verify.py
 #          skins = 0（head-only）；无 draco
 # 2) 渲染对比：Blender 内渲染到文件后 look(image=...)
 # 3) 静态服务：https://<本机IP>:5199/ 与 /redpanda_head.glb 均返回 200
+# 4) 子路径构建（部署前）：cd aniface-demo && npm run check && $env:BASE_PATH='/<repo>/'; npm run build
+#    期望：dist/ 里有 index.html、assets/、redpanda_head.glb、sample.jpg、mediapipe/；index.html 资源带 /<repo>/ 前缀
 ```
 
 ## 不要做的事

@@ -46,6 +46,18 @@ npm install
 npm run dev            # 默认 HTTPS，打开 https://localhost:5199/
 ```
 
+## 在线演示（GitHub Pages）
+
+推送到 GitHub 后由 Actions 自动构建并发布到 `https://<用户名>.github.io/<仓库名>/`。
+Pages 自带 HTTPS，**别人打开网页就能直接授权摄像头驱动头像**，不用再处理自签证书。
+
+一键流程：建公开空仓库 → `git remote add origin …` → `git push -u origin main` →
+仓库 Settings → Pages → Source 选 **GitHub Actions**。
+
+详细说明见 [aniface-demo/README.md](aniface-demo/README.md#部署到-github-pages)，
+工作流见 [.github/workflows/deploy-pages.yml](.github/workflows/deploy-pages.yml)。
+工作流会在 CI 里现跑 `npm run vendor:mediapipe` 生成约 36MB 运行时，所以这些大文件不入库。
+
 跨机器用摄像头（需要 https）：
 ```
 npm run cert           # 本机 IP 变了之后重新生成证书
