@@ -124,7 +124,7 @@ uv run --python 3.11 --with numpy python glb_verify.py
 # 2) 渲染对比：Blender 内渲染到文件后 look(image=...)
 # 3) 静态服务：https://<本机IP>:5199/ 与 /redpanda_head.glb 均返回 200
 # 4) 子路径构建（部署前）：cd aniface-demo && npm run check && $env:BASE_PATH='/<repo>/'; npm run build
-#    期望：dist/ 里有 index.html、assets/、redpanda_head.glb、sample.jpg、mediapipe/；index.html 资源带 /<repo>/ 前缀
+#    期望：dist/ 里有 index.html、assets/、redpanda_head.glb、mediapipe/；index.html 资源带 /<repo>/ 前缀
 ```
 
 ## 不要做的事
@@ -132,3 +132,4 @@ uv run --python 3.11 --with numpy python glb_verify.py
 - 不要用 `Start-Process` 起后台 npm 服务（本机策略会拒绝）；用前台 `exec_command` 起会话。
 - 5173 端口属于另一个项目，不要占用或终止其进程。
 - 不要把 `certs/`（私钥）、`*.npy`（派生数据）、`node_modules/`、`ICT-FaceKit/` 提交进 git。
+- **不要把任何真人照片素材提交进仓库**（`aniface-demo/public/sample.jpg` 这张证件照已从工作区与全部提交历史中移除）。要试演示效果，用「用视频 / 图片文件测试」自己选本地文件，文件不会进仓库。

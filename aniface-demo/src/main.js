@@ -267,12 +267,6 @@ $('file').addEventListener('change', async (ev) => {
     await new Promise(r => { frame.onload = r }); setStatus('处理图片…'); runOnElement(frame, false)
   }
 })
-$('playSample').addEventListener('click', async () => {
-  stopFile(); video.src = ''; video.srcObject = null
-  frame.src = asset('sample.jpg')
-  await new Promise(r => { frame.onload = r }); setStatus('处理内置样例…'); runOnElement(frame, false)
-})
-
 // ---------------- 位置 / 缩放 ----------------
 // ---------------- 合成：把小熊猫贴进摄像头画面 ----------------
 const comp = document.getElementById('composite')

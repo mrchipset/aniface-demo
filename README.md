@@ -14,8 +14,7 @@
 ├── aniface-demo/              可运行的 aniface 演示（Vite + three.js + MediaPipe）
 │   ├── src/main.js            三种驱动模式：摄像头 / 文件 / 手动滑块；含位置·缩放控制
 │   ├── public/
-│   │   ├── redpanda_head.glb  ★ 小熊猫头像（52 个 ARKit 表情）
-│   │   └── sample.jpg
+│   │   └── redpanda_head.glb  ★ 小熊猫头像（52 个 ARKit 表情）
 │   ├── certs/                 自签 HTTPS 证书（已 gitignore，用 npm run cert 生成）
 │   └── README.md              启动 / 跨机器访问 / 排错
 │
